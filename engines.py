@@ -40,7 +40,6 @@ if response.status_code != 200:
 # Do something with the payload...
 engines = response.json()
 
-
 jsonString = json.dumps(engines)
 enginesJSON = open("engines.json", "w")
 enginesJSON.write(jsonString)
