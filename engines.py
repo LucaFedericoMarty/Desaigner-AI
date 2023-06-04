@@ -1,7 +1,16 @@
 import os
 import requests
+import json
 
-import dotenv
+from dotenv import load_dotenv, find_dotenv 
+
+# * Find the path of the dotenv file
+
+dotenv_path = find_dotenv()
+
+# * Load the enviromental variables from the dotenv path
+
+load_dotenv(dotenv_path)
 
 # * Endpoint for getting all the current Stable Diffusion Engines
 
@@ -14,14 +23,25 @@ api_key = os.getenv("STABILITY_API_KEY")
 if api_key is None:
     raise Exception("Missing Stability API key.")
 
-# * Do the  
+# * Do the request with the following parameters:
+# * METHOD: Get
+# * ENDPOINT: /v1/engines/list
+# * HEADER: Stable Diffusion API Key
 
 response = requests.get(url, headers={
     "Authorization": f"Bearer {api_key}"
 })
 
+# * In case the status code is not 200 (that means everything went correct), raise an error
+
 if response.status_code != 200:
     raise Exception("Non-200 response: " + str(response.text))
 
 # Do something with the payload...
-payload = response.json()
+engines = response.json()
+
+
+jsonString = json.dumps(engines)
+enginesJSON = open("engines.json", "w")
+enginesJSON.write(jsonString)
+enginesJSON.close()
