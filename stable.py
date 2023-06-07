@@ -52,9 +52,11 @@ def get_engines(endpoint, api_key):
     enginesJSON.write(jsonString)
     enginesJSON.close()
 
-    return engines
+    return jsonString
 
 def filter_engine(engines, engine_key_word):
+
+    print(type(engines))
 
     engine_id = ""
 
@@ -71,8 +73,6 @@ def filter_engine(engines, engine_key_word):
             engine_id = engine["id"]
 
     return engine_id 
-
-engine_id = "stable-diffusion-v1-5"
 
 def create_image():
     response = requests.post(
@@ -105,4 +105,8 @@ def create_image():
     for i, image in enumerate(data["artifacts"]):
         with open(f"./out/v1_txt2img_{i}.png", "wb") as f:
             f.write(base64.b64decode(image["base64"]))
+
+engines = get_engines(endpoint_engines, api_key)
+engine_id = filter_engine(engines, "XL")
+print(engine_id)
 
