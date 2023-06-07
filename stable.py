@@ -1,6 +1,7 @@
 import os
 import requests
 import json
+import base64
 
 from dotenv import load_dotenv, find_dotenv 
 
@@ -13,6 +14,8 @@ dotenv_path = find_dotenv()
 load_dotenv(dotenv_path)
 
 # * Endpoint for getting all the current Stable Diffusion Engines
+
+# TODO: Change api_host to host it locally
 
 api_host = os.getenv('API_HOST', 'https://api.stability.ai')
 
@@ -50,3 +53,56 @@ def get_engines(endpoint, api_key):
     enginesJSON.close()
 
     return engines
+
+def filter_engine(engines, engine_key_word):
+
+    engine_id = ""
+
+    # * Parse JSON file to Python dictionary
+
+    engines_dict = json.loads(engines)
+
+    # * Index all the engines
+    # * Search for the engine which has the key word
+    # * Once found, grab its id
+
+    for engine in engines_dict:
+        if engine_key_word in engine["description"]:
+            engine_id = engine["id"]
+
+    return engine_id 
+
+engine_id = "stable-diffusion-v1-5"
+
+def create_image():
+    response = requests.post(
+    f"{api_host}/v1/generation/{engine_id}/text-to-image",
+    headers={
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    },
+    json={
+        "text_prompts": [
+            {
+                "text": "A lighthouse on a cliff"
+            }
+        ],
+        "cfg_scale": 7,
+        "clip_guidance_preset": "FAST_BLUE",
+        "height": 512,
+        "width": 512,
+        "samples": 1,
+        "steps": 30,
+    },
+)
+
+    if response.status_code != 200:
+        raise Exception("Non-200 response: " + str(response.text))
+
+    data = response.json()
+
+    for i, image in enumerate(data["artifacts"]):
+        with open(f"./out/v1_txt2img_{i}.png", "wb") as f:
+            f.write(base64.b64decode(image["base64"]))
+
