@@ -68,7 +68,7 @@ def filter_engine(engines, engine_key_word):
 
     return filtered_engine_id 
 
-def create_image(endpoint, api_key):
+def create_image(endpoint, api_key, prompt):
     response = requests.post(
     endpoint,
     headers={
@@ -79,7 +79,7 @@ def create_image(endpoint, api_key):
     json={
         "text_prompts": [
             {
-                "text": "Modern american-style kitchen"
+                "text": prompt
             }
         ],
         "cfg_scale": 7,
@@ -106,6 +106,6 @@ print(engine_id)
 
 endpoint_text_to_image = f"{api_host}/v1/generation/{engine_id}/text-to-image"
 
-create_image(endpoint_text_to_image, api_key)
+create_image(endpoint_text_to_image, api_key, "Gaming room with fancy lights and a pool table")
 
 
