@@ -106,6 +106,8 @@ print(engine_id)
 
 endpoint_text_to_image = f"{api_host}/v1/generation/{engine_id}/text-to-image"
 
+# * TEST GIT
+
 create_image(endpoint_text_to_image, api_key, "Gaming room with fancy lights and a pool table")
 
 
