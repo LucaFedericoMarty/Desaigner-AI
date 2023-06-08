@@ -56,10 +56,6 @@ def get_engines(endpoint, api_key):
 
 def filter_engine(engines, engine_key_word):
 
-    print(type(engines))
-
-    engine_id = ""
-
     # * Parse JSON file to Python dictionary
 
     engines_dict = json.loads(engines)
@@ -68,15 +64,13 @@ def filter_engine(engines, engine_key_word):
     # * Search for the engine which has the key word
     # * Once found, grab its id
 
-    for engine in engines_dict:
-        if engine_key_word in engine["description"]:
-            engine_id = engine["id"]
+    filtered_engine_id = [engine["id"] for engine in engines_dict if engine_key_word in engine["description"]][0]
 
-    return engine_id 
+    return filtered_engine_id 
 
-def create_image():
+def create_image(endpoint, api_key):
     response = requests.post(
-    f"{api_host}/v1/generation/{engine_id}/text-to-image",
+    endpoint,
     headers={
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -85,7 +79,7 @@ def create_image():
     json={
         "text_prompts": [
             {
-                "text": "A lighthouse on a cliff"
+                "text": "Modern american-style kitchen"
             }
         ],
         "cfg_scale": 7,
@@ -103,10 +97,15 @@ def create_image():
     data = response.json()
 
     for i, image in enumerate(data["artifacts"]):
-        with open(f"./out/v1_txt2img_{i}.png", "wb") as f:
+        with open(f"./images/image {i}.png", "wb") as f:
             f.write(base64.b64decode(image["base64"]))
 
 engines = get_engines(endpoint_engines, api_key)
 engine_id = filter_engine(engines, "XL")
 print(engine_id)
+
+endpoint_text_to_image = f"{api_host}/v1/generation/{engine_id}/text-to-image"
+
+create_image(endpoint_text_to_image, api_key)
+
 
