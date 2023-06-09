@@ -3,7 +3,10 @@ import requests
 import json
 import base64
 
-from dotenv import load_dotenv, find_dotenv 
+from dotenv import load_dotenv, find_dotenv
+
+from flask import Flask
+app = Flask(__name__)
 
 # * Find the path of the dotenv file
 
@@ -13,26 +16,34 @@ dotenv_path = find_dotenv()
 
 load_dotenv(dotenv_path)
 
-# * Endpoint for getting all the current Stable Diffusion Engines
-
-# TODO: Change api_host to host it locally
-
-api_host = os.getenv('API_HOST', 'https://api.stability.ai')
-
-endpoint_engines = f"{api_host}/v1/engines/list"
-
 # * Getting the API key and checking if it actually exists
 
 api_key = os.getenv("STABILITY_API_KEY")
 if api_key is None:
     raise Exception("Missing Stability API key.")
 
-def get_engines(endpoint, api_key):
+@app.route("/")
+def hello_world():
+    return "<p>Hello, World!</p>"
+
+""""
+
+@app.route("/engines")
+def get_engines(api_key):
 
 # * Do the request with the following parameters:
 # * METHOD: Get
 # * ENDPOINT: /v1/engines/list
 # * HEADER: Stable Diffusion API Key
+
+    # * Endpoint for getting all the current Stable Diffusion Engines
+
+    # TODO: Change api_host to host it locally
+
+    api_host = os.getenv('API_HOST', 'https://api.stability.ai')
+
+    endpoint_engines = f"{api_host}/v1/engines/list"
+
 
     response = requests.get(endpoint, headers={"Authorization": f"Bearer {api_key}"})
     
@@ -108,5 +119,7 @@ endpoint_text_to_image = f"{api_host}/v1/generation/{engine_id}/text-to-image"
 
 # * TEST GIT
 
-create_image(endpoint_text_to_image, api_key, "Gaming room with fancy lights and a pool table")
+create_image(endpoint_text_to_image, api_key, "Gaming room with fancy lights and a pool table")"""
 
+if __name__ == '__main__':
+    app.run(debug = True)
