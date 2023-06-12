@@ -100,6 +100,9 @@ def create_image(endpoint, api_key, prompt):
         with open(f"./images/image {i}.png", "wb") as f:
             f.write(base64.b64decode(image["base64"]))
 
+def create_prompt(price, style, enviroment):
+    return []
+
 engines = get_engines(endpoint_engines, api_key)
 engine_id = filter_engine(engines, "XL")
 print(engine_id)
