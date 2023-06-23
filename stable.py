@@ -100,13 +100,28 @@ def create_image(endpoint, api_key, prompt):
         with open(f"./images/image {i}.png", "wb") as f:
             f.write(base64.b64decode(image["base64"]))
 
-engines = get_engines(endpoint_engines, api_key)
-engine_id = filter_engine(engines, "XL")
-print(engine_id)
+def create_prompt(price, style, enviroment):
+    enviroment_w = weight_keyword(enviroment, 0.9)
+    style_w = weight_keyword(style, 0.5)
+    resolution = "8k"
+    picture_style = "hyperrealistic"
+    prompt = f"Interior design of a {enviroment_w}, {style}"
+    print(prompt)
+    return []
 
-endpoint_text_to_image = f"{api_host}/v1/generation/{engine_id}/text-to-image"
+def weight_keyword(keyword, weight):
+    weighted_keyword = {keyword : weight}
+    for key, value in weighted_keyword.items():
+        string_weighted_keyword = (f'{key} : {value}')
+    return string_weighted_keyword
 
-# * TEST GIT
+#engines = get_engines(endpoint_engines, api_key)
+#engine_id = filter_engine(engines, "XL")
+#print(engine_id)
 
-create_image(endpoint_text_to_image, api_key, "Gaming room with fancy lights and a pool table")
+#endpoint_text_to_image = f"{api_host}/v1/generation/{engine_id}/text-to-image"
+
+create_prompt(1000, "x", "Kitchen")
+
+#create_image(endpoint_text_to_image, api_key, "Gaming room with fancy lights and a pool table")
 
