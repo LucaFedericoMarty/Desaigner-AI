@@ -6,7 +6,12 @@ name = "pypi"
 [packages]
 requests = "*"
 python-dotenv = "*"
-flask = "*"
+fastapi = {extras = ["all"], version = "*"}
+diffusers = "==0.10.2"
+transformers = "*"
+scipy = "*"
+ftfy = "*"
+accelerate = "*"
 
 [dev-packages]
 
