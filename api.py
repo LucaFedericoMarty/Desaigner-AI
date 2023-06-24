@@ -11,8 +11,9 @@ from PIL import Image
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+from io import BytesIO
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 
 app = FastAPI()
 
@@ -50,29 +51,36 @@ def image_grid(imgs, rows=2, cols=2):
       grid.paste(img, box=(i % cols * width, i // cols * height))
   return grid
 
-def choose_shceduler(scheduler_name : str, model_pipeline):
+def choose_scheduler(scheduler_name, model_pipeline):
     if scheduler_name in model_pipeline.scheduler.compatibles:
         model_pipeline.scheduler = scheduler_name.from_config(model_pipeline.scheduler.config)
+    else:
+      f"The scheduler {scheduler_name} is not compatible with {model_pipeline}"
 
 def configure_pipeline(model_id : str, revision : str, torch_dtype : torch, scheduler : str) -> models:
     txt2img = DiffusionPipeline.from_pretrained(model_id, torch_dtype=torch_dtype).to("cuda")
+    choose_scheduler(EulerAncestralDiscreteScheduler, txt2img)
     components = txt2img.components
     img2img = StableDiffusionImg2ImgPipeline(**components)
     inpaint = StableDiffusionInpaintPipeline(**components)
-    choose_shceduler()
+    return txt2img, img2img, inpaint
 
 @app.route("/")
 def hello_world():
     return "<p>Hello, World!</p>"
 
-@app.route("/txt2img")
+@app.route("/txt2img", methods=["POST"])
 def txt2img(prompt : str , path : str, steps : int, cfg : float, num_images : int):
+    imagesstr = []
     images = model(prompt, num_inference_steps=steps, guidance_scale=cfg, num_images_per_prompt=num_images).images
-
     counter = 0
-
     for image in images:
         counter+=1
         image.save(f"{path}/Test Image {counter}.png")
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+        imgstr = base64.b64encode(buffer.getvalue())
+        imagesstr.append(imgstr)
     grid = image_grid(images)
     grid.save(f"{path}/Image Grid.png")
+    return Response(content=imagesstr, media_type="image/png")
