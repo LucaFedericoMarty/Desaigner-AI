@@ -16,6 +16,8 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
+models = DiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline
+
 def weight_keyword(keyword : str, weight : float) -> dict:
     weighted_keyword = {keyword : weight}
     for key, value in weighted_keyword.items():
@@ -48,8 +50,29 @@ def image_grid(imgs, rows=2, cols=2):
       grid.paste(img, box=(i % cols * width, i // cols * height))
   return grid
 
+def choose_shceduler(scheduler_name : str, model_pipeline):
+    if scheduler_name in model_pipeline.scheduler.compatibles:
+        model_pipeline.scheduler = scheduler_name.from_config(model_pipeline.scheduler.config)
+
+def configure_pipeline(model_id : str, revision : str, torch_dtype : torch, scheduler : str) -> models:
+    txt2img = DiffusionPipeline.from_pretrained(model_id, torch_dtype=torch_dtype).to("cuda")
+    components = txt2img.components
+    img2img = StableDiffusionImg2ImgPipeline(**components)
+    inpaint = StableDiffusionInpaintPipeline(**components)
+    choose_shceduler()
+
 @app.route("/")
 def hello_world():
     return "<p>Hello, World!</p>"
 
+@app.route("/txt2img")
+def txt2img(prompt : str , path : str, steps : int, cfg : float, num_images : int):
+    images = model(prompt, num_inference_steps=steps, guidance_scale=cfg, num_images_per_prompt=num_images).images
 
+    counter = 0
+
+    for image in images:
+        counter+=1
+        image.save(f"{path}/Test Image {counter}.png")
+    grid = image_grid(images)
+    grid.save(f"{path}/Image Grid.png")
