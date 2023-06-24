@@ -12,6 +12,8 @@ transformers = "*"
 scipy = "*"
 ftfy = "*"
 accelerate = "*"
+matplotlib = "*"
+safetensors = "*"
 
 [dev-packages]
 

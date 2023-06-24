@@ -12,6 +12,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from io import BytesIO
+from accelerate import PartialState
 
 from fastapi import FastAPI, Response
 
@@ -57,13 +58,16 @@ def choose_scheduler(scheduler_name, model_pipeline):
     else:
       f"The scheduler {scheduler_name} is not compatible with {model_pipeline}"
 
-def configure_pipeline(model_id : str, revision : str, torch_dtype : torch, scheduler : str) -> models:
-    txt2img = DiffusionPipeline.from_pretrained(model_id, torch_dtype=torch_dtype).to("cuda")
-    choose_scheduler(EulerAncestralDiscreteScheduler, txt2img)
+def load_pipeline(model_id : str, revision : str, torch_dtype : torch, scheduler) -> models:
+    distributed_state = PartialState()
+    txt2img = DiffusionPipeline.from_pretrained(model_id, torch_dtype=torch_dtype, use_safetensors=True)
+    choose_scheduler(scheduler, txt2img)
     components = txt2img.components
     img2img = StableDiffusionImg2ImgPipeline(**components)
     inpaint = StableDiffusionInpaintPipeline(**components)
     return txt2img, img2img, inpaint
+
+txt2img_model, img2img_model, inpaint_model = load_pipeline(model_id = "SG161222/Realistic_Vision_V1.4", revision="fp16", torch_dtype=torch.float16, scheduler=EulerAncestralDiscreteScheduler)
 
 @app.route("/")
 def hello_world():
@@ -72,7 +76,7 @@ def hello_world():
 @app.route("/txt2img", methods=["POST"])
 def txt2img(prompt : str , path : str, steps : int, cfg : float, num_images : int):
     imagesstr = []
-    images = model(prompt, num_inference_steps=steps, guidance_scale=cfg, num_images_per_prompt=num_images).images
+    images = txt2img_model(prompt, num_inference_steps=steps, guidance_scale=cfg, num_images_per_prompt=num_images).images
     counter = 0
     for image in images:
         counter+=1
