@@ -50,9 +50,9 @@ def choose_scheduler(scheduler_name, model_pipeline):
     else:
       f"The scheduler {scheduler_name} is not compatible with {model_pipeline}"
 
-def load_pipeline(model_id : str, revision : str, torch_dtype : torch, scheduler) -> models:
+def load_pipeline(model_id : str, scheduler, **config) -> models:
     distributed_state = PartialState()
-    txt2img = DiffusionPipeline.from_pretrained(model_id, torch_dtype=torch_dtype, use_safetensors=True)
+    txt2img = DiffusionPipeline.from_pretrained(model_id, revision=config.get('revision'), torch_dtype=config.get('torch_dtype'), use_safetensors=True)
     choose_scheduler(scheduler, txt2img)
     components = txt2img.components
     img2img = StableDiffusionImg2ImgPipeline(**components)
