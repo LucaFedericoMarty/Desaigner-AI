@@ -14,6 +14,7 @@ ftfy = "*"
 accelerate = "*"
 matplotlib = "*"
 safetensors = "*"
+streamlit = "*"
 
 [dev-packages]
 
