@@ -30,10 +30,24 @@ def hello_world():
 def txt2img(prompt : str , path : str, steps : int, cfg : float, num_images : int):
     imagesstr = []
     images = txt2img_model(prompt, num_inference_steps=steps, guidance_scale=cfg, num_images_per_prompt=num_images).images
-    counter = 0
-    for image in images:
-        counter+=1
-        image.save(f"{path}/Test Image {counter}.png")
+    for num_image in range(len(images)):
+        image = images[num_image]
+        image.save(f"{path}/Test Image {num_image}.png")
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+        imgstr = base64.b64encode(buffer.getvalue())
+        imagesstr.append(imgstr)
+    grid = image_grid(images)
+    grid.save(f"{path}/Image Grid.png")
+    return Response(content=imagesstr, media_type="image/png")
+
+@app.route("/inpaint", methods=["POST"])
+def inpaint(prompt : str , path : str, steps : int, cfg : float, num_images : int, input_image, mask_image):
+    imagesstr = []
+    images = inpaint_model(prompt, image=input_image, mask_image=mask_image, num_inference_steps=steps, guidance_scale=cfg, num_images_per_prompt=num_images).images
+    for num_image in range(len(images)):
+        image = images[num_image]
+        image.save(f"{path}/Test Image {num_image}.png")
         buffer = BytesIO()
         image.save(buffer, format="PNG")
         imgstr = base64.b64encode(buffer.getvalue())

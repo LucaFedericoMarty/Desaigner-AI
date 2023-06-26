@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from io import BytesIO
 from accelerate import PartialState
+import base64
 
 models = DiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline
 
@@ -58,3 +59,14 @@ def load_pipeline(model_id : str, scheduler, **config) -> models:
     img2img = StableDiffusionImg2ImgPipeline(**components)
     inpaint = StableDiffusionInpaintPipeline(**components)
     return txt2img, img2img, inpaint
+
+def save_images(images):
+  for num_image in range(len(images)):
+    image = images[num_image]
+    image.save(f"{path}/Test Image {num_image}.png")
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    imgstr = base64.b64encode(buffer.getvalue())
+    imagesstr.append(imgstr)
+  grid = image_grid(images)
+  grid.save(f"{path}/Image Grid.png")
