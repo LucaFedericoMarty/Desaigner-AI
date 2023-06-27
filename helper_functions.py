@@ -60,6 +60,8 @@ def load_pipelines(model_id : str, scheduler, **config) -> models:
     # Workaround for not accepting attention shape using VAE for Flash Attention
     #txt2img.vae.enable_xformers_memory_efficient_attention()
     txt2img.enable_vae_slicing()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    txt2img.to(device)
     components = txt2img.components
     img2img = StableDiffusionImg2ImgPipeline(**components)
     inpaint = StableDiffusionInpaintPipeline(**components)
