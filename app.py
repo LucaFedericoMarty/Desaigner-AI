@@ -44,7 +44,10 @@ if st.button("Create image :sparkles:"):
     for num_image in range(len(images)):
         image = images[num_image]
         if st.button (st.image(image=image)):
-            imgvariation(image=image)  
+            images_variation = imgvariation(image=image, steps=50, cfg=4.5, num_images=num_images)
+            for num_image in range(len(images_variation)):
+                image_variation = images_variation[num_image]
+                st.image(image=image_variation)  
 
 
 
