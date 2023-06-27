@@ -15,6 +15,7 @@ accelerate = "*"
 matplotlib = "*"
 safetensors = "*"
 streamlit = "*"
+xformers = "*"
 
 [dev-packages]
 

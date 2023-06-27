@@ -1,6 +1,7 @@
 from diffusers import ( DiffusionPipeline,
 StableDiffusionImg2ImgPipeline,
 StableDiffusionInpaintPipeline,
+StableDiffusionImageVariationPipeline,
 EulerAncestralDiscreteScheduler)
 import torch
 from PIL import Image
@@ -10,8 +11,9 @@ import numpy as np
 from io import BytesIO
 from accelerate import PartialState
 import base64
+from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 
-models = DiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline
+models = DiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, StableDiffusionImageVariationPipeline
 
 def weight_keyword(keyword : str, weight : float) -> dict:
     weighted_keyword = {keyword : weight}
@@ -51,22 +53,53 @@ def choose_scheduler(scheduler_name, model_pipeline):
     else:
       f"The scheduler {scheduler_name} is not compatible with {model_pipeline}"
 
-def load_pipeline(model_id : str, scheduler, **config) -> models:
-    distributed_state = PartialState()
+def load_pipelines(model_id : str, scheduler, **config) -> models:
     txt2img = DiffusionPipeline.from_pretrained(model_id, revision=config.get('revision'), torch_dtype=config.get('torch_dtype'), use_safetensors=True)
     choose_scheduler(scheduler, txt2img)
+    #txt2img.enable_xformers_memory_efficient_attention()
+    # Workaround for not accepting attention shape using VAE for Flash Attention
+    #txt2img.vae.enable_xformers_memory_efficient_attention()
+    txt2img.enable_vae_slicing()
     components = txt2img.components
     img2img = StableDiffusionImg2ImgPipeline(**components)
     inpaint = StableDiffusionInpaintPipeline(**components)
-    return txt2img, img2img, inpaint
+    imgvariation = StableDiffusionImageVariationPipeline.from_pretrained('lambdalabs/sd-image-variations-diffusers', revision="v2.0")
+    return txt2img, img2img, inpaint, imgvariation
 
 def save_images(images):
   for num_image in range(len(images)):
     image = images[num_image]
-    image.save(f"{path}/Test Image {num_image}.png")
+    image.save(f"Test Image {num_image}.png")
     buffer = BytesIO()
     image.save(buffer, format="PNG")
     imgstr = base64.b64encode(buffer.getvalue())
     imagesstr.append(imgstr)
   grid = image_grid(images)
   grid.save(f"{path}/Image Grid.png")
+
+def zipfiles(filenames):
+    zip_subdir = "archive"
+    zip_filename = "%s.zip" % zip_subdir
+
+    # Open StringIO to grab in-memory ZIP contents
+    s = StringIO.StringIO()
+    # The zip compressor
+    zf = zipfile.ZipFile(s, "w")
+
+    for fpath in filenames:
+        # Calculate path for file in zip
+        fdir, fname = os.path.split(fpath)
+        zip_path = os.path.join(zip_subdir, fname)
+
+        # Add file, at correct path
+        zf.write(fpath, zip_path)
+
+    # Must close zip for all contents to be written
+    zf.close()
+
+    # Grab ZIP file from in-memory, make response with correct MIME-type
+    resp = Response(s.getvalue(), mimetype = "application/x-zip-compressed")
+    # ..and correct content-disposition
+    resp['Content-Disposition'] = 'attachment; filename=%s' % zip_filename
+
+    return resp
