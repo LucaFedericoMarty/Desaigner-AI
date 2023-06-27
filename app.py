@@ -8,13 +8,18 @@ from PIL import Image
 
 from helper_functions import create_prompt, image_grid, choose_scheduler, load_pipelines, models
 
-txt2img_model, img2img_model, inpaint_model, imgvariation = load_pipelines(model_id = "SG161222/Realistic_Vision_V1.4", 
+txt2img_model, img2img_model, inpaint_model, imgvariation_model = load_pipelines(model_id = "SG161222/Realistic_Vision_V1.4", 
                                                             #revision="fp16", 
                                                             #torch_dtype=torch.float16, 
                                                             scheduler=EulerAncestralDiscreteScheduler)
 
 def txt2img(prompt : str , steps : int, cfg : float, num_images : int):
     images = txt2img_model(prompt, num_inference_steps=steps, guidance_scale=cfg, num_images_per_prompt=num_images).images
+    grid = image_grid(images)
+    return images
+
+def imgvariation(image : Image , steps : int, cfg : float, num_images : int):
+    images = imgvariation_model(image=image, num_inference_steps=steps, guidance_scale=cfg, num_images_per_prompt=num_images).images
     grid = image_grid(images)
     return images
 
@@ -38,7 +43,8 @@ if st.button("Create image :sparkles:"):
     images = txt2img(prompt=prompt, steps=50, cfg=4.5, num_images=num_images)
     for num_image in range(len(images)):
         image = images[num_image]
-        st.image(image=image)  
+        if st.button (st.image(image=image)):
+            imgvariation(image=image)  
 
 
 
