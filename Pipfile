@@ -6,6 +6,16 @@ name = "pypi"
 [packages]
 requests = "*"
 python-dotenv = "*"
+diffusers = "==0.10.2"
+transformers = "*"
+scipy = "*"
+ftfy = "*"
+accelerate = "*"
+matplotlib = "*"
+safetensors = "*"
+streamlit = "*"
+xformers = "*"
+fastapi = {extras = ["all"], version = "*"}
 
 [dev-packages]
 
