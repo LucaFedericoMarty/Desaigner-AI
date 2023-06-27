@@ -35,15 +35,18 @@ environment = st.selectbox("Environment", ('Kitchen', 'Living Room', 'Bedroom', 
 
 region_weather = st.selectbox("Region", ('Cold', 'Hot', 'Snowy', 'Rainy', 'Tropical'))
 
-num_images = st.slider('How many photos do you want?', 0, 10, 4)
+num_images = st.slider('How many photos do you want?', 1, 10, 4)
 
 prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
 
 if st.button("Create image :sparkles:"):
     images = txt2img(prompt=prompt, steps=50, cfg=4.5, num_images=num_images)
+    cols = st.columns(4, "medium")
     for num_image in range(len(images)):
         image = images[num_image]
-        if st.button (st.image(image=image)):
+        cols[num_images].image(image=image)
+        if st.button ():
+            st.image(image=image, caption="Selected images")
             images_variation = imgvariation(image=image, steps=50, cfg=4.5, num_images=num_images)
             for num_image in range(len(images_variation)):
                 image_variation = images_variation[num_image]
