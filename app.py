@@ -41,7 +41,7 @@ prompt = create_prompt(budget=budget, style=style, environment=environment, regi
 
 if st.button("Create image :sparkles:"):
     images = txt2img(prompt=prompt, steps=50, cfg=4.5, num_images=num_images)
-    cols = st.columns(4, "medium")
+    cols = st.columns(spec=4, gap="medium")
     for num_image in range(len(images)):
         image = images[num_image]
         if st.button (cols[num_images].image(image=image)):
