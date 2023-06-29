@@ -13,7 +13,7 @@ from accelerate import PartialState
 import base64
 from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 
-models = DiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline
+models = DiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, StableDiffusionImageVariationPipeline
 
 def weight_keyword(keyword : str, weight : float) -> dict:
     weighted_keyword = {keyword : weight}
@@ -65,8 +65,8 @@ def load_pipelines(model_id : str, scheduler, **config) -> models:
     components = txt2img.components
     img2img = StableDiffusionImg2ImgPipeline(**components)
     inpaint = StableDiffusionInpaintPipeline(**components)
-    #imgvariation = StableDiffusionImageVariationPipeline.from_pretrained('lambdalabs/sd-image-variations-diffusers', revision="v2.0")
-    return txt2img, img2img, inpaint
+    imgvariation = StableDiffusionImageVariationPipeline.from_pretrained('lambdalabs/sd-image-variations-diffusers', revision="v2.0")
+    return txt2img, img2img, inpaint, imgvariation
 
 def save_images(images):
   for num_image in range(len(images)):
