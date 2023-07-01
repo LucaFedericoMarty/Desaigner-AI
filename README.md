@@ -12,7 +12,7 @@
 <p align="center">
 	<img
         width="100%"
-        src="https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/img/Comparison%20Desaigner.png?raw=true">
+        src="https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/img/Comparison.png?raw=true">
 </p>
 
 ## Overview
