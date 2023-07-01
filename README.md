@@ -1,3 +1,18 @@
-![alt text](https://github.com/[username]/[reponame]/blob/[branch]/image.jpg?raw=true)
+<h1 align="center">
+    <img 
+        width=100%
+        alt="DesAIgner"
+        src="https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/img/Banner%20Desaigner.png?raw=true">
+</h1>
 
-# Desaigner-AI :house_with_garden: :sparles:
+<h3 align="center">
+    DesAIgner is a PWA that allows you to re-design an interior environment or just use it for creativity purposes
+</h3>
+
+<p align="center">
+	<img
+        width="100%"
+        src="https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/img/Comparison%20Desaigner.png?raw=true">
+</p>
+
+## Overview
