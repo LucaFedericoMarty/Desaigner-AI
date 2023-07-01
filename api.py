@@ -20,13 +20,13 @@ from helper_functions import weight_keyword, create_prompt, image_grid, choose_s
 
 app = FastAPI()
 
-txt2img_model, img2img_model, inpaint_model, image_variation_model = load_pipelines(model_id = "SG161222/Realistic_Vision_V1.4", revision="fp16", torch_dtype=torch.float16, scheduler=EulerAncestralDiscreteScheduler)
+txt2img_model, img2img_model, inpaint_model, image_variation_model = load_pipelines(model_id = "SG161222/Realistic_Vision_V1.4", scheduler=EulerAncestralDiscreteScheduler) #revision="fp16", #torch_dtype=torch.float16)
 
-@app.route("/")
+@app.get("/")
 def hello_world():
-    return "<p>Hello, World!</p>"
+    return "Welcome to my REST API"
 
-@app.route("/txt2img", methods=["POST"])
+@app.post("/txt2img")
 async def txt2img(request : Request):
     imagesstr = []
     data = await request.json()
