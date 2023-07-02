@@ -13,6 +13,7 @@ import zipfile
 from accelerate import PartialState
 import base64
 from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
+from fastapi import Response
 
 models = DiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, StableDiffusionImageVariationPipeline
 
@@ -81,7 +82,7 @@ def save_images(images):
   grid.save(f"{path}/Image Grid.png")
 
 def zipfiles(filenames):
-    zip_filename = "archive.zip"
+    zip_filename = "images.zip"
 
     s = BytesIO()
     zf = zipfile.ZipFile(s, "w")

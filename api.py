@@ -20,6 +20,8 @@ from typing import Optional
 
 from helper_functions import weight_keyword, create_prompt, image_grid, choose_scheduler, load_pipelines, zipfiles, models  
 
+# http://127.0.0.1:8000
+
 app = FastAPI(
     title="DesAIgner's Stable Diffusion API",
     description="This API provides the service of creating **images** via **Stable Diffusion pre-trained models**",
@@ -37,7 +39,7 @@ txt2img_model, img2img_model, inpaint_model, image_variation_model = load_pipeli
 
 @app.get("/")
 def hello_world():
-    return "Welcome to my REST API"
+    return {"welcome_message" : "Welcome to my REST API"}
 
 @app.post("/txt2img")
 def txt2img(design_request : design):
@@ -51,6 +53,20 @@ def txt2img(design_request : design):
         imagesstr.append(imgstr)
     grid = image_grid(images)
     return zipfiles(imagesstr)
+
+@app.post("/txt2img2")
+def txt2img2(prompt : str, steps : int, guidance_scale : float, num_images : int):
+    paths = []
+    images = txt2img_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
+    for num_image in range(len(images)):
+        image = images[num_image]
+        buffer = BytesIO()
+        path = f"Image {num_image}.png"
+        image.save(path, format="PNG")
+        imgstr = base64.b64encode(buffer.getvalue())
+        paths.append(path)
+    grid = image_grid(images)
+    return zipfiles(paths)
 
 @app.route("/inpaint", methods=["POST"])
 def inpaint(prompt : str , path : str, steps : int, cfg : float, num_images : int, input_image, mask_image):
