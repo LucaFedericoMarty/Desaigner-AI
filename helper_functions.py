@@ -9,6 +9,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from io import BytesIO
+import zipfile
 from accelerate import PartialState
 import base64
 from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
@@ -80,28 +81,24 @@ def save_images(images):
   grid.save(f"{path}/Image Grid.png")
 
 def zipfiles(filenames):
-    zip_subdir = "archive"
-    zip_filename = "%s.zip" % zip_subdir
+    zip_filename = "archive.zip"
 
-    # Open StringIO to grab in-memory ZIP contents
-    s = StringIO.StringIO()
-    # The zip compressor
+    s = BytesIO()
     zf = zipfile.ZipFile(s, "w")
 
     for fpath in filenames:
         # Calculate path for file in zip
         fdir, fname = os.path.split(fpath)
-        zip_path = os.path.join(zip_subdir, fname)
 
         # Add file, at correct path
-        zf.write(fpath, zip_path)
+        zf.write(fpath, fname)
 
     # Must close zip for all contents to be written
     zf.close()
 
     # Grab ZIP file from in-memory, make response with correct MIME-type
-    resp = Response(s.getvalue(), mimetype = "application/x-zip-compressed")
-    # ..and correct content-disposition
-    resp['Content-Disposition'] = 'attachment; filename=%s' % zip_filename
+    resp = Response(s.getvalue(), media_type="application/x-zip-compressed", headers={
+        'Content-Disposition': f'attachment;filename={zip_filename}'
+    })
 
     return resp
