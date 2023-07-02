@@ -14,13 +14,16 @@ import numpy as np
 from io import BytesIO
 from accelerate import PartialState
 
-from fastapi import FastAPI, Response, Request
+from fastapi import FastAPI, Response, Request, HTTPException
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 from helper_functions import weight_keyword, create_prompt, image_grid, choose_scheduler, load_pipelines, zipfiles, models  
 
-app = FastAPI()
+app = FastAPI(
+    title="DesAIgner's Stable Diffusion API",
+    description="This API provides the service of creating **images** via **Stable Diffusion pre-trained models**",
+    version="0.1.0")
 
 class design(BaseModel):
     #model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -39,11 +42,7 @@ def hello_world():
 @app.post("/txt2img")
 def txt2img(design_request : design):
     imagesstr = []
-    prompt = design_request.prompt
-    steps = design_request.steps
-    cfg = design_request.guidance_scale
-    num_images = design_request.num_images
-    images = txt2img_model(prompt, num_inference_steps=steps, guidance_scale=cfg, num_images_per_prompt=num_images).images
+    images = txt2img_model(prompt=design_request.prompt, num_inference_steps=design_request.steps, guidance_scale=design_request.guidance_scale, num_images_per_prompt=design_request.num_images).images
     for num_image in range(len(images)):
         image = images[num_image]
         buffer = BytesIO()
