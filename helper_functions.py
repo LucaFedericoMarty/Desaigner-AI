@@ -110,3 +110,13 @@ def zip_files(file_objects):
     for i, file_obj in enumerate(file_objects):
       zipf.writestr(f'image{i + 1}.png', file_obj.getvalue())
   return zip_filename
+
+def save_images(images : list[Image.Image]):
+  file_objects= []
+  for num_image in range(len(images)):
+    image = images[num_image]
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    buffer.seek(0)
+    file_objects.append(buffer)
+  return file_objects
