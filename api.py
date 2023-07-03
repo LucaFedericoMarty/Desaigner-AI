@@ -32,7 +32,7 @@ app = FastAPI(
 
 class design(BaseModel):
     #model_config = ConfigDict(arbitrary_types_allowed=True)
-    prompt: Optional[str]
+    prompt: str | None = None # * The | None = None makes the attribute optional 
     steps: int
     guidance_scale : float
     num_images: int
@@ -42,16 +42,24 @@ txt2img_model, img2img_model, inpaint_model, image_variation_model = load_pipeli
 
 @app.get("/")
 def test_api():
-    """Root route query to test API operation"""
+    """Root route request to test API operation"""
     return {"welcome_message" : "Welcome to my REST API"}
 
 @app.post("/txt2img")
-def txt2img(prompt : str, steps : int, guidance_scale : float, num_images : int):
+def txt2img(prompt : str = Field(description="Prompt for creating images"), steps : int = Field(description="Number of steps necessary to create images"), guidance_scale : float = Field(description="Number that represents the fidelity of prompt when creating the image"), num_images : int = Field(description="Number of images to create")):
+    """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
+
+    # * Intiliaze the list of file objects --> Direction in memory of files
     file_objects = []
+    # * Create the images using the given prompt and some other parameters
     images = txt2img_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
+    # * Save each image into a space in memory
     file_objects = save_images(images)
+    # * Create an image grid
     grid = image_grid(images)
+    # * Zip each image file into a zip folder
     zip_filename = zip_files(file_objects)
+    # * Return the zip file with the name 'images.zip' and specify its media type
     return FileResponse(zip_filename, filename='images.zip', media_type='application/zip')
 
 @app.post("/txt2img2")
