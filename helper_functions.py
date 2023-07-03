@@ -103,3 +103,10 @@ def zipfiles(filenames):
     })
 
     return resp
+
+def zip_files(file_objects):
+  zip_filename = 'images.zip'
+  with zipfile.ZipFile(zip_filename, 'w') as zipf:
+    for i, file_obj in enumerate(file_objects):
+      zipf.writestr(f'image{i + 1}.png', file_obj.getvalue())
+  return zip_filename

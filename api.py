@@ -43,16 +43,17 @@ def hello_world():
 
 @app.post("/txt2img")
 def txt2img(design_request : design):
-    imagesstr = []
+    file_objects = []
     images = txt2img_model(prompt=design_request.prompt, num_inference_steps=design_request.steps, guidance_scale=design_request.guidance_scale, num_images_per_prompt=design_request.num_images).images
     for num_image in range(len(images)):
         image = images[num_image]
         buffer = BytesIO()
         image.save(buffer, format="PNG")
-        imgstr = base64.b64encode(buffer.getvalue())
-        imagesstr.append(imgstr)
+        buffer.seek(0)
+        file_objects.append(buffer)
     grid = image_grid(images)
-    return zipfiles(imagesstr)
+    zip_filename = zip_files(file_objects)
+    return FileResponse(zip_filename, filename='images.zip', media_type='application/zip')
 
 @app.post("/txt2img2")
 def txt2img2(prompt : str, steps : int, guidance_scale : float, num_images : int):
