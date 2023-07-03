@@ -1,3 +1,4 @@
+from dataclasses import Field
 import os
 from urllib import response
 import requests
@@ -17,7 +18,7 @@ from accelerate import PartialState
 
 from fastapi import FastAPI, Response, Request, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 
 from helper_functions import weight_keyword, create_prompt, image_grid, choose_scheduler, load_pipelines, zipfiles, zip_files , save_images, models  
@@ -54,7 +55,7 @@ def txt2img(prompt : str, steps : int, guidance_scale : float, num_images : int)
     return FileResponse(zip_filename, filename='images.zip', media_type='application/zip')
 
 @app.post("/txt2img2")
-def txt2img2(prompt : str, steps : int, guidance_scale : float, num_images : int):
+def txt2img2(prompt : str = Field(description="Prompt for creating images"), steps : int = Field(description="Number of steps necessary to create images"), guidance_scale : float = Field(description="Number that represents the fidelity of prompt when creating the image"), num_images : int = Field(description="Number of images to create")):
     paths = []
     images = txt2img_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     for num_image in range(len(images)):
