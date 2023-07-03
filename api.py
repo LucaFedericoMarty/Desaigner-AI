@@ -1,4 +1,5 @@
 import os
+from urllib import response
 import requests
 import json
 import base64
@@ -15,10 +16,11 @@ from io import BytesIO
 from accelerate import PartialState
 
 from fastapi import FastAPI, Response, Request, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
-from helper_functions import weight_keyword, create_prompt, image_grid, choose_scheduler, load_pipelines, zipfiles, models  
+from helper_functions import weight_keyword, create_prompt, image_grid, choose_scheduler, load_pipelines, zipfiles, zip_files ,models  
 
 # http://127.0.0.1:8000
 
@@ -42,9 +44,9 @@ def hello_world():
     return {"welcome_message" : "Welcome to my REST API"}
 
 @app.post("/txt2img")
-def txt2img(design_request : design):
+def txt2img(prompt : str, steps : int, guidance_scale : float, num_images : int):
     file_objects = []
-    images = txt2img_model(prompt=design_request.prompt, num_inference_steps=design_request.steps, guidance_scale=design_request.guidance_scale, num_images_per_prompt=design_request.num_images).images
+    images = txt2img_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     for num_image in range(len(images)):
         image = images[num_image]
         buffer = BytesIO()
