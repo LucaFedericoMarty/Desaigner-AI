@@ -14,6 +14,7 @@ from accelerate import PartialState
 import base64
 from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 from fastapi import Response
+import json
 
 models = DiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, StableDiffusionImageVariationPipeline
 
@@ -70,7 +71,7 @@ def load_pipelines(model_id : str, scheduler, **config) -> models:
     imgvariation = StableDiffusionImageVariationPipeline.from_pretrained('lambdalabs/sd-image-variations-diffusers', revision="v2.0")
     return txt2img, img2img, inpaint, imgvariation
 
-def save_images(images):
+def save_images_dw(images):
   for num_image in range(len(images)):
     image = images[num_image]
     image.save(f"Test Image {num_image}.png")
@@ -120,3 +121,25 @@ def save_images(images : list[Image.Image]):
     buffer.seek(0)
     file_objects.append(buffer)
   return file_objects
+
+def encode_save_images(images : list[Image.Image]):
+  # * Initialize an empty dictionary to store the encoded images:
+    # * Example: {Image 1 : 0xbcmnshalla}
+  encoded_images_dict = {}
+  # * Index each image with respective index 
+  for num_image in range(len(images)):
+    # * Access an image with its index
+    image = images[num_image]
+    # * Create a buffer (Space of memory in RAM)
+    buffer = BytesIO()
+    # * Save each image in memory
+    image.save(buffer, format="PNG")
+    # * Encode each buffer's value (Image) in base64 
+    encoded_image = base64.b64encode(buffer.getvalue())
+    # * Create each dictionary with its respective key (Image 'number of image') and value which is the bas64 encoded image
+    encoded_image_dict = {f"Image {num_image + 1} : {encoded_image}"}
+    # * Update the images dictionary with the new dict 
+    encoded_images_dict.update(encoded_image_dict)
+  # * Convert the image dictionary to a json and return it
+  jsonImages = json.dumps(encoded_images_dict)
+  return jsonImages
