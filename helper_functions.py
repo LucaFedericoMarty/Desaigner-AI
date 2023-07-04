@@ -71,40 +71,6 @@ def load_pipelines(model_id : str, scheduler, **config) -> models:
     imgvariation = StableDiffusionImageVariationPipeline.from_pretrained('lambdalabs/sd-image-variations-diffusers', revision="v2.0")
     return txt2img, img2img, inpaint, imgvariation
 
-def save_images_dw(images):
-  for num_image in range(len(images)):
-    image = images[num_image]
-    image.save(f"Test Image {num_image}.png")
-    buffer = BytesIO()
-    image.save(buffer, format="PNG")
-    imgstr = base64.b64encode(buffer.getvalue())
-    imagesstr.append(imgstr)
-  grid = image_grid(images)
-  grid.save(f"{path}/Image Grid.png")
-
-def zipfiles(filenames):
-    zip_filename = "images.zip"
-
-    s = BytesIO()
-    zf = zipfile.ZipFile(s, "w")
-
-    for fpath in filenames:
-        # Calculate path for file in zip
-        fdir, fname = os.path.split(fpath)
-
-        # Add file, at correct path
-        zf.write(fpath, fname)
-
-    # Must close zip for all contents to be written
-    zf.close()
-
-    # Grab ZIP file from in-memory, make response with correct MIME-type
-    resp = Response(s.getvalue(), media_type="application/x-zip-compressed", headers={
-        'Content-Disposition': f'attachment;filename={zip_filename}'
-    })
-
-    return resp
-
 def zip_files(file_objects):
   zip_filename = 'images.zip'
   with zipfile.ZipFile(zip_filename, 'w') as zipf:
