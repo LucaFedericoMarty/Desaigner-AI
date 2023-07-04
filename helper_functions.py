@@ -134,14 +134,17 @@ def encode_save_images(images : list[Image.Image]):
     buffer = BytesIO()
     # * Save each image in memory
     image.save(buffer, format="PNG")
-    # * Encode each buffer's value (Image) in base64 
-    encoded_image = base64.b64encode(buffer.getvalue())
-    # * Create each dictionary with its respective key (Image 'number of image') and value which is the bas64 encoded image
-    encoded_image_dict = {f"Image {num_image + 1}" : {encoded_image} }
-    # * Update the images dictionary with the new dict 
-    encoded_images_dict.update(encoded_image_dict)
+    # * Encode each buffer's value (Image) in base64 to convert it in binary
+    binary_image = base64.b64encode(buffer.getvalue())
+    # * Open the binary image and read it to convert it to a string
+    with open(binary_image, "rb") as img_file:
+      binary_string_image = base64.b64encode(img_file.read())
+    # * Create each instance of the image with its name as its key and its binary value encoded in base64 in string
+    encoded_images_dict[f"Image {num_image + 1}"] = binary_string_image
   # * Convert the image dictionary to a json and return it
-  print(encoded_images_dict)
-  jsonImages = json.dumps(list(encoded_images_dict))
-  print(jsonImages)
+  jsonImages = json.dumps(encoded_images_dict)
   return jsonImages
+
+im = Image.open("img/Comparison.png")
+imgs = [im]
+jsonImage = encode_save_images(imgs)
