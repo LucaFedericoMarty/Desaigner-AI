@@ -16,10 +16,11 @@ import numpy as np
 from io import BytesIO
 from accelerate import PartialState
 
-from fastapi import FastAPI, Response, Request, HTTPException, UploadFile
+from fastapi import FastAPI, Response, Request, HTTPException, UploadFile, Query
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel, ConfigDict, Required
+from typing import Optional, Annotated
 
 from helper_functions import encode_save_images, weight_keyword, create_prompt, image_grid, choose_scheduler, load_pipelines, zipfiles, zip_files , save_images, models  
 
@@ -46,7 +47,11 @@ def test_api():
     return {"welcome_message" : "Welcome to my REST API"}
 
 @app.post("/txt2img")
-def txt2img(prompt : str = Field(description="Prompt for creating images"), steps : int = Field(description="Number of steps necessary to create images"), guidance_scale : float = Field(description="Number that represents the fidelity of prompt when creating the image"), num_images : int = Field(description="Number of images to create")):
+def txt2img(prompt : Annotated[str , Query(title="Prompt for creating images", description="Text to Image Diffusers usually benefit from a more descriptive prompt, try writing detailed things")], 
+            steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
+            guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
+            num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2):
+            
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
     # * Intiliaze the list of file objects --> Direction in memory of files
@@ -63,11 +68,16 @@ def txt2img(prompt : str = Field(description="Prompt for creating images"), step
     return FileResponse(zip_filename, filename='images.zip', media_type='application/zip')
 
 @app.post("/txt2img2")
-def txt2imgjson(prompt : str = Field(description="Prompt for creating images"), steps : int = Field(description="Number of steps necessary to create images"), guidance_scale : float = Field(description="Number that represents the fidelity of prompt when creating the image"), num_images : int = Field(description="Number of images to create")):
+def txt2imgjson(prompt : Annotated[str , Query(title="Prompt for creating images", description="Text to Image Diffusers usually benefit from a more descriptive prompt, try writing detailed things")], 
+            steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
+            guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
+            num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2):
+    
     images = txt2img_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     jsonImages = encode_save_images(images)
+    jsonCompatibleImages = jsonable_encoder(jsonImages)
     grid = image_grid(images)
-    return JSONResponse(content=jsonImages)
+    return JSONResponse(content=jsonCompatibleImages)
 
 @app.post("/inpaint")
 def inpaint(prompt : str , steps : int, guidance_scale : float, num_images : int, input_image : UploadFile, mask_image : UploadFile):

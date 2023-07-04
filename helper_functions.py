@@ -109,7 +109,7 @@ def zip_files(file_objects):
   zip_filename = 'images.zip'
   with zipfile.ZipFile(zip_filename, 'w') as zipf:
     for i, file_obj in enumerate(file_objects):
-      zipf.writestr(f'image{i + 1}.png', file_obj.getvalue())
+      zipf.writestr(f'image {i + 1}.png', file_obj.getvalue())
   return zip_filename
 
 def save_images(images : list[Image.Image]):
@@ -137,9 +137,11 @@ def encode_save_images(images : list[Image.Image]):
     # * Encode each buffer's value (Image) in base64 
     encoded_image = base64.b64encode(buffer.getvalue())
     # * Create each dictionary with its respective key (Image 'number of image') and value which is the bas64 encoded image
-    encoded_image_dict = {f"Image {num_image + 1} : {encoded_image}"}
+    encoded_image_dict = {f"Image {num_image + 1}" : {encoded_image} }
     # * Update the images dictionary with the new dict 
     encoded_images_dict.update(encoded_image_dict)
   # * Convert the image dictionary to a json and return it
-  jsonImages = json.dumps(encoded_images_dict)
+  print(encoded_images_dict)
+  jsonImages = json.dumps(list(encoded_images_dict))
+  print(jsonImages)
   return jsonImages
