@@ -144,7 +144,3 @@ def encode_save_images(images : list[Image.Image]):
   # * Convert the image dictionary to a json and return it
   jsonImages = json.dumps(encoded_images_dict)
   return jsonImages
-
-im = Image.open("img/Comparison.png")
-imgs = [im]
-jsonImage = encode_save_images(imgs)
