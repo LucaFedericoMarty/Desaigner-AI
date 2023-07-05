@@ -92,21 +92,19 @@ def encode_save_images(images : list[Image.Image]):
   # * Initialize an empty dictionary to store the encoded images:
     # * Example: {Image 1 : 0xbcmnshalla}
   encoded_images_dict = {}
-  # * Index each image with respective index 
-  for num_image in range(len(images)):
-    # * Access an image with its index
-    image = images[num_image]
-    # * Create a buffer (Space of memory in RAM)
+  # * Index each image with its respective index 
+  for num_image, image in enumerate(images):
+    # * Create a memory buffer (Space of memory in RAM) to store the image data in bytes
     buffer = BytesIO()
     # * Save each image in memory
     image.save(buffer, format="PNG")
-    # * Encode each buffer's value (Image) in base64 to convert it in binary
-    binary_image = base64.b64encode(buffer.getvalue())
-    # * Open the binary image and read it to convert it to a string
-    with open(binary_image, "rb") as img_file:
-      binary_string_image = base64.b64encode(img_file.read())
-    # * Create each instance of the image with its name as its key and its binary value encoded in base64 in string
-    encoded_images_dict[f"Image {num_image + 1}"] = binary_string_image
-  # * Convert the image dictionary to a json and return it
+    # * Encode each buffer's value (Image in binary) in base64
+      # * Buffer.getvalue() gets the image data in binary format
+      # * Then encode this binary data in base64
+      # * Decode it in latin1 in order to be a string compatible with JSON
+    binary_image = base64.urlsafe_b64encode(buffer.getvalue()).decode('latin1')
+    # * Create each instance of the image with its name as its key and its value encoded in base64 in string format
+    encoded_images_dict[f"Image {num_image + 1}"] = binary_image
+  # * Convert the image dictionary to a JSON and return it
   jsonImages = json.dumps(encoded_images_dict)
   return jsonImages
