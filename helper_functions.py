@@ -17,13 +17,16 @@ import json
 
 models = DiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, StableDiffusionImageVariationPipeline
 
-def weight_keyword(keyword : str, weight : float) -> dict:
-    weighted_keyword = {keyword : weight}
-    for key, value in weighted_keyword.items():
-        string_weighted_keyword = (f'{key} : {value}')
-    return string_weighted_keyword
+def weight_keyword(keyword : str, weight : float) -> str:
+    """Weight each keyword by the given weight"""
+
+    # * Weight the keyword by the given weight in a string format
+    return (f'{keyword} : {weight}')
 
 def create_prompt(budget : str, style : str , environment : str, region_weather : str) -> str:
+  """Creat an adequate prompt with each keyword weighted"""
+
+  # * Create all the keywords or key phrases to weight
   budget += " budget"
   budget_w = weight_keyword(budget, 0.5)
   environment_w = weight_keyword(environment, 1)
@@ -32,6 +35,7 @@ def create_prompt(budget : str, style : str , environment : str, region_weather 
   region_weather_w = weight_keyword(region_weather, 0.2)
   resolution = "8k"
   picture_style = "hyperrealistic"
+
   prompt = f"Interior design of a {environment_w}, {style_w}, for a {region_weather_w}, {picture_style}, {budget_w}, 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
   return prompt
 
@@ -70,24 +74,32 @@ def load_pipelines(model_id : str, scheduler, **config) -> models:
     imgvariation = StableDiffusionImageVariationPipeline.from_pretrained('lambdalabs/sd-image-variations-diffusers', revision="v2.0")
     return txt2img, img2img, inpaint, imgvariation
 
-def zip_files(file_objects):
+def zip_files(file_objects : BytesIO):
+  # * Define the name of the zip file
   zip_filename = 'images.zip'
+  # * Open the zip file to write information in it
   with zipfile.ZipFile(zip_filename, 'w') as zipf:
+    # * Write the information of the buffer in the zip file  
     for i, file_obj in enumerate(file_objects):
+      # * Each file of the zip file will have "Image 'num_image'" as its filename and will write the image information in it 
       zipf.writestr(f'image {i + 1}.png', file_obj.getvalue())
   return zip_filename
 
-def save_images(images : list[Image.Image]):
+def save_images(images : list[Image.Image]) -> BytesIO:
+  # * Initialize a list to store the image file objects
   file_objects= []
-  for num_image in range(len(images)):
-    image = images[num_image]
+  # * Index the images
+  for image in images:
+    # * Create the buffer for storing each image
     buffer = BytesIO()
+    # * Save each image in the buffer
     image.save(buffer, format="PNG")
+    # * Store the image file objects in the list previously mentioned
     buffer.seek(0)
     file_objects.append(buffer)
   return file_objects
 
-def images_to_b64(images : list[Image.Image]):
+def images_to_b64(images : list[Image.Image]) -> str:
   # * Initialize an empty dictionary to store the encoded images:
     # * Example: {Image 1 : 0xbcmnshalla}
   encoded_images_dict = {}
@@ -111,7 +123,10 @@ def images_to_b64(images : list[Image.Image]):
     encodedB64_image = base64.urlsafe_b64encode(buffer.getvalue())
     # * Decode it in latin1 in order to be a string compatible with JSON
     encodedB64_image_string = encodedB64_image.decode('latin1')
-    # * Create each instance of the image with its name as its key and its value encoded in base64 in string format
+    # * Create each instance of the dictionary with the following values:
+      # * Image number
+      # * Encoded image string
+      # * Image type
     encoded_images_dict["Image number"] = num_image + 1
     encoded_images_dict["Encoded image"] = encodedB64_image_string
     encoded_images_dict["Image type"] = image_type
