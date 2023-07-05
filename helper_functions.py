@@ -13,14 +13,7 @@ import zipfile
 from accelerate import PartialState
 import base64
 from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
-from fastapi import Response
 import json
-from pydantic import BaseModel
-
-class encoded_images(BaseModel):
-   number_image : int
-   encoded_image : str
-   format_image : str
 
 models = DiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, StableDiffusionImageVariationPipeline
 
@@ -104,6 +97,8 @@ def images_to_b64(images : list[Image.Image]):
     buffer = BytesIO()
     # * Save each image in memory
     image.save(buffer, format="PNG")
+    # * Get the image type
+    image_type = image.format
     # * Encode each buffer's value (Image in binary) in base64
       # * Buffer.getvalue() gets the image binary data in hex format --> xd9\x80\xb4\xa1\x14I^ \xd3\x94\xd8$\x11\xac\x14\x82\xc2\xe3\x9a\xc1\x80\xe8\x01d\x920\'\x16\x13\x91\x1bJ}\xebI\xa5\xc0\xe3|r\xc3:Y
       # * Then encode this binary data in base64:
@@ -117,11 +112,9 @@ def images_to_b64(images : list[Image.Image]):
     # * Decode it in latin1 in order to be a string compatible with JSON
     encodedB64_image_string = encodedB64_image.decode('latin1')
     # * Create each instance of the image with its name as its key and its value encoded in base64 in string format
-    encoded_images_dict[f"Image {num_image + 1}"] = encodedB64_image_string
+    encoded_images_dict["Image number"] = num_image + 1
+    encoded_images_dict["Encoded image"] = encodedB64_image_string
+    encoded_images_dict["Image type"] = image_type
   # * Convert the image dictionary to a JSON and return it
   jsonImages = json.dumps(encoded_images_dict)
-  print(type(jsonImages))
   return jsonImages
-
-img = [Image.open("img/Comparison.png")]
-jsonimg = images_to_b64(img)
