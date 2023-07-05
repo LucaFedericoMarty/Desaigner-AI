@@ -99,12 +99,19 @@ def encode_save_images(images : list[Image.Image]):
     # * Save each image in memory
     image.save(buffer, format="PNG")
     # * Encode each buffer's value (Image in binary) in base64
-      # * Buffer.getvalue() gets the image data in binary format
-      # * Then encode this binary data in base64
-      # * Decode it in latin1 in order to be a string compatible with JSON
-    binary_image = base64.urlsafe_b64encode(buffer.getvalue()).decode('latin1')
+      # * Buffer.getvalue() gets the image binary data in hex format --> xd9\x80\xb4\xa1\x14I^ \xd3\x94\xd8$\x11\xac\x14\x82\xc2\xe3\x9a\xc1\x80\xe8\x01d\x920\'\x16\x13\x91\x1bJ}\xebI\xa5\xc0\xe3|r\xc3:Y
+      # * Then encode this binary data in base64:
+        # * Example: "Python"
+        # * - Take the ASCII value of each character in the string --> P, y, t, h, o, n are 15, 50, 45, 33, 40, 39
+        # * - Calculate the 8-bit binary equivalent of the ASCII values --> 15, 50, 45, 33, 40, 39 are 01010000 01111001 01110100 01101000 01101111 01101110
+        # * - Convert the 8-bit chunks into chunks of 6 bits by simply re-grouping the digits --> 01010000 01111001 01110100 01101000 01101111 01101110 are 010100 000111 100101 110100 011010 000110 111101 101110
+        # * - Convert the 6-bit binary groups to their respective decimal values. --> 010100 000111 100101 110100 011010 000110 111101 101110 are 20, 7, 37, 52, 26, 6, 61, 46
+        # * - Using a base64 encoding table, assign the respective base64 character for each decimal value --> 20, 7, 37, 52, 26, 6, 61, 46 are UHl0aG9u
+    encodedB64_image = base64.urlsafe_b64encode(buffer.getvalue())
+    # * Decode it in latin1 in order to be a string compatible with JSON
+    encodedB64_image_string = encodedB64_image.decode('latin1')
     # * Create each instance of the image with its name as its key and its value encoded in base64 in string format
-    encoded_images_dict[f"Image {num_image + 1}"] = binary_image
+    encoded_images_dict[f"Image {num_image + 1}"] = encodedB64_image_string
   # * Convert the image dictionary to a JSON and return it
   jsonImages = json.dumps(encoded_images_dict)
   return jsonImages

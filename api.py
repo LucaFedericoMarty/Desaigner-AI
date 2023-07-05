@@ -77,7 +77,12 @@ def txt2imgjson(prompt : Annotated[str , Query(title="Prompt for creating images
     jsonImages = encode_save_images(images)
     jsonCompatibleImages = jsonable_encoder(jsonImages)
     grid = image_grid(images)
-    return JSONResponse(content=jsonCompatibleImages)
+
+    # * Set personalized JSON filename
+    filename = "base64images.json"
+    headers = {"Content-Disposition": f"attachment; filename={filename}"}
+
+    return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
 @app.post("/inpaint")
 def inpaint(prompt : str , steps : int, guidance_scale : float, num_images : int, input_image : UploadFile, mask_image : UploadFile):
