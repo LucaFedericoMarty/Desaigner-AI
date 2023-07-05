@@ -73,12 +73,18 @@ def txt2imgjson(prompt : Annotated[str , Query(title="Prompt for creating images
             guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
             num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2):
     
+    """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
+
+    # * Create the images using the given prompt and some other parameters
     images = txt2img_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
+    # * Encode the images in base64 and save them to a JSON file
     jsonImages = encode_save_images(images)
+    # * Make compatible the JSON with the response
     jsonCompatibleImages = jsonable_encoder(jsonImages)
+    # * Create an image grid
     grid = image_grid(images)
 
-    # * Set personalized JSON filename
+    # * Set personalized JSON filename and create the headers for the JSON file
     filename = "base64images.json"
     headers = {"Content-Disposition": f"attachment; filename={filename}"}
 
