@@ -15,6 +15,12 @@ import base64
 from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 from fastapi import Response
 import json
+from pydantic import BaseModel
+
+class encoded_images(BaseModel):
+   number_image : int
+   encoded_image : str
+   format_image : str
 
 models = DiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, StableDiffusionImageVariationPipeline
 
@@ -88,7 +94,7 @@ def save_images(images : list[Image.Image]):
     file_objects.append(buffer)
   return file_objects
 
-def encode_save_images(images : list[Image.Image]):
+def images_to_b64(images : list[Image.Image]):
   # * Initialize an empty dictionary to store the encoded images:
     # * Example: {Image 1 : 0xbcmnshalla}
   encoded_images_dict = {}
@@ -114,4 +120,8 @@ def encode_save_images(images : list[Image.Image]):
     encoded_images_dict[f"Image {num_image + 1}"] = encodedB64_image_string
   # * Convert the image dictionary to a JSON and return it
   jsonImages = json.dumps(encoded_images_dict)
+  print(type(jsonImages))
   return jsonImages
+
+img = [Image.open("img/Comparison.png")]
+jsonimg = images_to_b64(img)
