@@ -15,6 +15,8 @@ import base64
 from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 import json
 
+# * Alias for models
+
 models = DiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, StableDiffusionImageVariationPipeline
 
 def weight_keyword(keyword : str, weight : float) -> str:
@@ -33,13 +35,14 @@ def create_prompt(budget : str, style : str , environment : str, region_weather 
   style_w = weight_keyword(style, 0.6)
   region_weather += " weather"
   region_weather_w = weight_keyword(region_weather, 0.2)
-  resolution = "8k"
-  picture_style = "hyperrealistic"
 
-  prompt = f"Interior design of a {environment_w}, {style_w}, for a {region_weather_w}, {picture_style}, {budget_w}, 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
+  # * Create the prompt with additional details to improve its performance
+  prompt = f"Interior design of a {environment_w}, {style_w}, for a {region_weather_w}, {budget_w}, hyperrealistic, 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
   return prompt
 
 def image_grid(imgs, rows=2, cols=2):
+  """Generate an image grid given a number of rows and columns"""
+
   # * Get the width and height of the first image
   width, height = imgs[0].size
   # * Create the image grid, with the size of the images
@@ -54,27 +57,42 @@ def image_grid(imgs, rows=2, cols=2):
   return grid
 
 def choose_scheduler(scheduler_name, model_pipeline):
+    """Choose the scheduler given a name and the pipeline desired to change if compatible"""
+
+    # * If the scheduler is compatible with the given pipeline, change the scheduler pipeline
     if scheduler_name in model_pipeline.scheduler.compatibles:
         model_pipeline.scheduler = scheduler_name.from_config(model_pipeline.scheduler.config)
+    # * Else, return a message indicating that the scheduler is not compatible with the given pipeline
     else:
       f"The scheduler {scheduler_name} is not compatible with {model_pipeline}"
 
 def load_pipelines(model_id : str, scheduler, **config) -> models:
+    """Load the model pipeline and configure it"""
+
+    # * Load the model pipeline txt2img model
     txt2img = DiffusionPipeline.from_pretrained(model_id, revision=config.get('revision'), torch_dtype=config.get('torch_dtype'), use_safetensors=True)
+    # * Change the model scheduler
     choose_scheduler(scheduler, txt2img)
     #txt2img.enable_xformers_memory_efficient_attention()
     # Workaround for not accepting attention shape using VAE for Flash Attention
     #txt2img.vae.enable_xformers_memory_efficient_attention()
+    # * Configuration for optimization
     txt2img.enable_vae_slicing()
+    # * If cuda GPU available, set the device to the GPU. Else, set CPU.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # * Move to the given device
     txt2img.to(device)
+    # * Grab the model pipeline components
     components = txt2img.components
+    # * Load the img2img, inpaint and image variation model
     img2img = StableDiffusionImg2ImgPipeline(**components)
     inpaint = StableDiffusionInpaintPipeline(**components)
     imgvariation = StableDiffusionImageVariationPipeline.from_pretrained('lambdalabs/sd-image-variations-diffusers', revision="v2.0")
     return txt2img, img2img, inpaint, imgvariation
 
-def zip_files(file_objects : BytesIO):
+def zip_images(file_objects : BytesIO):
+  """Zip images given their file objects. It returns a zip folder with the corresponding image file name and its value"""
+
   # * Define the name of the zip file
   zip_filename = 'images.zip'
   # * Open the zip file to write information in it
@@ -86,6 +104,8 @@ def zip_files(file_objects : BytesIO):
   return zip_filename
 
 def save_images(images : list[Image.Image]) -> BytesIO:
+  """Save the images file objects in a list"""
+
   # * Initialize a list to store the image file objects
   file_objects= []
   # * Index the images
@@ -100,6 +120,8 @@ def save_images(images : list[Image.Image]) -> BytesIO:
   return file_objects
 
 def images_to_b64(images : list[Image.Image]) -> str:
+  """Convert a list of images into a JSON string with each image encoded in base64 format"""
+
   # * Initialize an empty dictionary to store the encoded images:
     # * Example: {Image 1 : 0xbcmnshalla}
   encoded_images_dict = {}

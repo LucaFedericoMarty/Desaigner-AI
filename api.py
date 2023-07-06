@@ -22,7 +22,7 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict, Required
 from typing import Optional, Annotated
 
-from helper_functions import encode_save_images, weight_keyword, create_prompt, image_grid, choose_scheduler, load_pipelines, zip_files , save_images, models  
+from helper_functions import images_to_b64, weight_keyword, create_prompt, image_grid, choose_scheduler, load_pipelines, zip_images , save_images, models  
 
 # http://127.0.0.1:8000
 
@@ -63,7 +63,7 @@ def txt2img(prompt : Annotated[str , Query(title="Prompt for creating images", d
     # * Create an image grid
     grid = image_grid(images)
     # * Zip each image file into a zip folder
-    zip_filename = zip_files(file_objects)
+    zip_filename = zip_images(file_objects)
     # * Return the zip file with the name 'images.zip' and specify its media type
     return FileResponse(zip_filename, filename='images.zip', media_type='application/zip')
 
@@ -78,7 +78,7 @@ def txt2imgjson(prompt : Annotated[str , Query(title="Prompt for creating images
     # * Create the images using the given prompt and some other parameters
     images = txt2img_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     # * Encode the images in base64 and save them to a JSON file
-    jsonImages = encode_save_images(images)
+    jsonImages = images_to_b64(images)
     # * Make compatible the JSON with the response
     jsonCompatibleImages = jsonable_encoder(jsonImages)
     # * Create an image grid
@@ -101,17 +101,42 @@ def inpaint(prompt : Annotated[str , Query(title="Prompt for creating images", d
 
     """Inpainting route request that performs a text-to-image process in the mask of the image using a pre-trained Stable Diffusion Model"""
 
+    # * Create the images using the given prompt and some other parameters
     images = inpaint_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, image=input_image, mask_image=mask_image, num_images_per_prompt=num_images).images
-    file_objects = save_images(images)
+    # * Encode the images in base64 and save them to a JSON file
+    jsonImages = images_to_b64(images)
+    # * Make compatible the JSON with the response
+    jsonCompatibleImages = jsonable_encoder(jsonImages)
+    # * Create an image grid
     grid = image_grid(images)
-    zip_filename = zip_files(file_objects)
-    return FileResponse(zip_filename, filename='images.zip', media_type='application/zip')
+
+    # * Set personalized JSON filename and create the headers for the JSON file
+    filename = "base64images.json"
+    headers = {"Content-Disposition": f"attachment; filename={filename}"}
+
+    return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
 @app.post("/image_variation")
-def inpaint(prompt : str , steps : int, guidance_scale : float, num_images : int, input_image : UploadFile):
-    images = image_variation_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, image=input_image, num_images_per_prompt=num_images).images
-    file_objects = save_images(images)
-    grid = image_grid(images)
-    zip_filename = zip_files(file_objects)
-    return FileResponse(zip_filename, filename='images.zip', media_type='application/zip')
+def image_variation(prompt : Annotated[str , Query(title="Prompt for creating images", description="Text to Image Diffusers usually benefit from a more descriptive prompt, try writing detailed things")],
+            input_image : Annotated[UploadFile , Query(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")],  
+            steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
+            guidance_scale : Annotated[float , Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
+            num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2 
+            ):
+    
+    """Image variation route request that performs a CLIP process in the input image, that outputs a description of an image that afterwards is used as the prompt to create similar images"""
 
+    # * Create the images using the given prompt and some other parameters
+    images = image_variation_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, image=input_image, num_images_per_prompt=num_images).images
+    # * Encode the images in base64 and save them to a JSON file
+    jsonImages = images_to_b64(images)
+    # * Make compatible the JSON with the response
+    jsonCompatibleImages = jsonable_encoder(jsonImages)
+    # * Create an image grid
+    grid = image_grid(images)
+
+    # * Set personalized JSON filename and create the headers for the JSON file
+    filename = "base64images.json"
+    headers = {"Content-Disposition": f"attachment; filename={filename}"}
+
+    return JSONResponse(content=jsonCompatibleImages, headers=headers)
