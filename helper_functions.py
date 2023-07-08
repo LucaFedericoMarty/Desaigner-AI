@@ -66,29 +66,54 @@ def choose_scheduler(scheduler_name, model_pipeline):
     else:
       f"The scheduler {scheduler_name} is not compatible with {model_pipeline}"
 
-def load_pipelines(model_id : str, scheduler, **config) -> models:
+def load_pipelines(model_id: str, scheduler, **config) -> models:
     """Load the model pipeline and configure it"""
 
-    # * Load the model pipeline txt2img model
-    txt2img = DiffusionPipeline.from_pretrained(model_id, revision=config.get('revision'), torch_dtype=config.get('torch_dtype'), use_safetensors=True)
-    # * Change the model scheduler
-    choose_scheduler(scheduler, txt2img)
-    #txt2img.enable_xformers_memory_efficient_attention()
-    # Workaround for not accepting attention shape using VAE for Flash Attention
-    #txt2img.vae.enable_xformers_memory_efficient_attention()
-    # * Configuration for optimization
-    txt2img.enable_vae_slicing()
-    # * If cuda GPU available, set the device to the GPU. Else, set CPU.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # * Move to the given device
-    txt2img.to(device)
-    # * Grab the model pipeline components
-    components = txt2img.components
-    # * Load the img2img, inpaint and image variation model
-    img2img = StableDiffusionImg2ImgPipeline(**components)
-    inpaint = StableDiffusionInpaintPipeline(**components)
-    imgvariation = StableDiffusionImageVariationPipeline.from_pretrained('lambdalabs/sd-image-variations-diffusers', revision="v2.0")
-    return txt2img, img2img, inpaint, imgvariation
+    pipelines = []
+
+    # Load the model pipeline txt2img model
+    with torch.no_grad():
+        txt2img = DiffusionPipeline.from_pretrained(
+            model_id,
+            custom_pipeline="lpw_stable_diffusion",
+            revision=config.get('revision'),
+            torch_dtype=torch.float16,
+            use_safetensors=True,
+            safety_checker=None,
+            feature_extractor=None,
+            requires_safety_checker=False)
+        choose_scheduler(scheduler, txt2img)
+        txt2img.enable_vae_slicing()
+        txt2img.enable_attention_slicing()
+        txt2img.enable_model_cpu_offload()
+        txt2img.enable_xformers_memory_efficient_attention()
+        txt2img.to(device)
+        components = txt2img.components
+        pipelines.append(txt2img)
+
+    # Load the img2img model
+    with torch.no_grad():
+        img2img = StableDiffusionImg2ImgPipeline(**components)
+        img2img.to(device)
+        pipelines.append(img2img)
+
+    # Load the inpaint model
+    with torch.no_grad():
+        inpaint = StableDiffusionInpaintPipeline(**components)
+        inpaint.to(device)
+        pipelines.append(inpaint)
+
+    # Load the image variation model
+    with torch.no_grad():
+        imgvariation = StableDiffusionImageVariationPipeline.from_pretrained('lambdalabs/sd-image-variations-diffusers', revision="v2.0")
+        imgvariation.to(device)
+        pipelines.append(imgvariation)
+
+    # Clear intermediate variables
+    del txt2img, img2img, inpaint, imgvariation
+
+    return tuple(pipelines)
 
 def zip_images(file_objects : BytesIO):
   """Zip images given their file objects. It returns a zip folder with the corresponding image file name and its value"""

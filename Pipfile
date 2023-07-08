@@ -6,7 +6,6 @@ name = "pypi"
 [packages]
 requests = "*"
 python-dotenv = "*"
-diffusers = "==0.10.2"
 transformers = "*"
 scipy = "*"
 ftfy = "*"
@@ -16,6 +15,7 @@ safetensors = "*"
 streamlit = "*"
 xformers = "*"
 fastapi = {extras = ["all"], version = "*"}
+diffusers = {extras = ["torch"], version = "*"}
 
 [dev-packages]
 
