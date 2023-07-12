@@ -22,7 +22,7 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, Annotated
 
-from helper_functions import images_to_b64, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , save_images, models  
+from functions.helper_functions import images_to_b64, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , save_images, models  
 
 # http://127.0.0.1:8000
 

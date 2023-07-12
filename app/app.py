@@ -6,7 +6,7 @@ EulerAncestralDiscreteScheduler)
 import torch
 from PIL import Image
 
-from helper_functions import create_prompt, image_grid, choose_scheduler, load_pipelines, models
+from functions.helper_functions import create_prompt, image_grid, choose_scheduler, load_pipelines, models
 
 txt2img_model, img2img_model, inpaint_model, imgvariation_model = load_pipelines(model_id = "SG161222/Realistic_Vision_V1.4", 
                                                             #revision="fp16", 

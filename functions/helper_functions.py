@@ -81,6 +81,8 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  scheduler = UniPC
     controlnet = ControlNetModel.from_pretrained(
     controlnet_model, torch_dtype=torch.float16, use_safetensos=True)
 
+    # TODO: Load Stable Diffusion pipeline with OpenVINO or ONNX
+
     # * Load the model pipeline txt2img model
     with torch.no_grad():
       txt2img = StableDiffusionPipeline.from_pretrained(
