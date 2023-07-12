@@ -35,14 +35,14 @@ def create_prompt(budget : str, style : str , environment : str, region_weather 
 
   # * Create all the keywords or key phrases to weight
   budget += " budget"
-  budget_w = weight_keyword(budget, 0.5)
-  environment_w = weight_keyword(environment, 1)
-  style_w = weight_keyword(style, 0.6)
+  budget_w = weight_keyword(budget, 0.7)
+  environment_w = weight_keyword(environment, 1.5)
+  style_w = weight_keyword(style, 1.2)
   region_weather += " weather"
-  region_weather_w = weight_keyword(region_weather, 0.2)
+  region_weather_w = weight_keyword(region_weather, 0.4)
 
   # * Create the prompt with additional details to improve its performance
-  prompt = f"Interior design of a {environment_w}, {style_w}, for a {region_weather_w}, {budget_w}, ultra realistic render, 3D art, 3D, hyperrealistic, photorealistic, ultradetailed, 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
+  prompt = f"Interior design of a {environment_w}, {style_w}, for a {region_weather_w}, {budget_w}, ultra realistic render : 1.3, 3D art, 3D, hyperrealistic : 1.5, photorealistic : 1.5, ultradetailed 1:5, 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
   return prompt
 
 def image_grid(imgs, rows=2, cols=2):
