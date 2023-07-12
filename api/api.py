@@ -60,10 +60,12 @@ def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     # * Create the prompt for creating the image
     prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
+    # * Create the negative prompt for avoiding certain concepts in the photo
+    negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
     # * Intiliaze the list of file objects --> Direction in memory of files
     file_objects = []
     # * Create the images using the given prompt and some other parameters
-    images = txt2img_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images, generator=torch.Generator(device="cuda" if torch.cuda.is_available() else "cpu")).images
+    images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images, generator=torch.Generator(device="cuda" if torch.cuda.is_available() else "cpu")).images
     # * Save each image into a space in memory
     file_objects = save_images(images)
     # * Create an image grid
@@ -86,8 +88,10 @@ def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", 
 
     # * Create the prompt for creating the image
     prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
+    # * Create the negative prompt for avoiding certain concepts in the photo
+    negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
     # * Create the images using the given prompt and some other parameters
-    images = txt2img_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
+    images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     # * Encode the images in base64 and save them to a JSON file
     jsonImages = images_to_b64(images)
     # * Make compatible the JSON with the response
@@ -115,10 +119,12 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     # * Create the prompt for creating the image
     prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
+    # * Create the negative prompt for avoiding certain concepts in the photo
+    negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
     # * Convert the image to mlsd line detector format
     input_image = mlsd_detector(input_image)
     # * Create the images using the given prompt and some other parameters
-    images = img2img_model(prompt=prompt, input_image=input_image, controlnet_conditioning_scale = 1.0, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
+    images = img2img_model(prompt=prompt, negative_prompt=negative_prompt, input_image=input_image, controlnet_conditioning_scale = 1.0, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     # * Encode the images in base64 and save them to a JSON file
     jsonImages = images_to_b64(images)
     # * Make compatible the JSON with the response
@@ -148,8 +154,10 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     # * Create the prompt for creating the image
     prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
+    # * Create the negative prompt for avoiding certain concepts in the photo
+    negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
     # * Create the images using the given prompt and some other parameters
-    images = inpaint_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, image=input_image, mask_image=mask_image, num_images_per_prompt=num_images).images
+    images = inpaint_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, image=input_image, mask_image=mask_image, num_images_per_prompt=num_images).images
     # * Encode the images in base64 and save them to a JSON file
     jsonImages = images_to_b64(images)
     # * Make compatible the JSON with the response
