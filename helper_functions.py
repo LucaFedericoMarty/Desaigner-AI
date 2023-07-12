@@ -1,8 +1,13 @@
-from diffusers import ( DiffusionPipeline,
+from diffusers import (DiffusionPipeline,
+StableDiffusionPipeline,
 StableDiffusionImg2ImgPipeline,
 StableDiffusionInpaintPipeline,
 StableDiffusionImageVariationPipeline,
-EulerAncestralDiscreteScheduler)
+EulerAncestralDiscreteScheduler,
+UniPCMultistepScheduler,
+StableDiffusionControlNetPipeline,
+ControlNetModel)
+from controlnet_aux import MLSDdetector
 import torch
 from PIL import Image
 import os
@@ -17,7 +22,7 @@ import json
 
 # * Alias for models
 
-models = DiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, StableDiffusionImageVariationPipeline
+models = DiffusionPipeline, StableDiffusionControlNetPipeline, StableDiffusionInpaintPipeline
 
 def weight_keyword(keyword : str, weight : float) -> str:
     """Weight each keyword by the given weight"""
@@ -66,54 +71,75 @@ def choose_scheduler(scheduler_name, model_pipeline):
     else:
       f"The scheduler {scheduler_name} is not compatible with {model_pipeline}"
 
-def load_pipelines(model_id: str, scheduler, **config) -> models:
+def load_all_pipelines(model_id: str, inpaint_model_id : str,  scheduler = UniPCMultistepScheduler, controlnet_model = "lllyasviel/control_v11p_sd15_mlsd") -> models:
     """Load the model pipeline and configure it"""
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     pipelines = []
+    components = []
 
-    # Load the model pipeline txt2img model
+    controlnet = ControlNetModel.from_pretrained(
+    controlnet_model, torch_dtype=torch.float16, use_safetensos=True)
+
+    # * Load the model pipeline txt2img model
     with torch.no_grad():
-        txt2img = DiffusionPipeline.from_pretrained(
-            model_id,
-            custom_pipeline="lpw_stable_diffusion",
-            revision=config.get('revision'),
-            torch_dtype=torch.float16,
-            use_safetensors=True,
-            safety_checker=None,
-            feature_extractor=None,
-            requires_safety_checker=False)
-        choose_scheduler(scheduler, txt2img)
-        txt2img.enable_vae_slicing()
-        txt2img.enable_attention_slicing()
-        txt2img.enable_model_cpu_offload()
+      txt2img = StableDiffusionPipeline.from_pretrained(
+        model_id,
+        custom_pipeline="lpw_stable_diffusion",
+        torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32),
+        #revision='fp16',
+        use_safetensors=True,
+        )
+      choose_scheduler(scheduler, txt2img)
+      txt2img.enable_vae_slicing()
+      txt2img.enable_attention_slicing()
+      if torch.cuda.is_available():
         txt2img.enable_xformers_memory_efficient_attention()
-        txt2img.to(device)
-        components = txt2img.components
-        pipelines.append(txt2img)
+        txt2img.enable_model_cpu_offload()
+      components = txt2img.components
+      pipelines.append(txt2img)
 
-    # Load the img2img model
+    # * Load the txt2img guided with controlnet model used as an img2img model
     with torch.no_grad():
-        img2img = StableDiffusionImg2ImgPipeline(**components)
-        img2img.to(device)
-        pipelines.append(img2img)
+      img2img = StableDiffusionControlNetPipeline.from_pretrained(
+          model_id,
+          #custom_pipeline="lpw_stable_diffusion",
+          torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32),
+          #revision='fp16',
+          use_safetensors=True,
+          controlnet=controlnet)
+      img2img.enable_vae_slicing()
+      img2img.enable_attention_slicing()
+      if torch.cuda.is_available():
+        img2img.enable_xformers_memory_efficient_attention()
+        img2img.enable_model_cpu_offload()
+      pipelines.append(img2img)
 
-    # Load the inpaint model
+
+    # * Load the inpaint model
     with torch.no_grad():
-        inpaint = StableDiffusionInpaintPipeline(**components)
-        inpaint.to(device)
-        pipelines.append(inpaint)
+      inpaint = StableDiffusionInpaintPipeline.from_pretrained(
+          inpaint_model_id,
+          custom_pipeline="lpw_stable_diffusion",
+          torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32),
+          revision='fp16',
+          #use_safetensors=True
+          )
+      choose_scheduler(scheduler, inpaint)
+      inpaint.enable_vae_slicing()
+      inpaint.enable_attention_slicing()
+      if torch.cuda.is_available():
+        inpaint.enable_xformers_memory_efficient_attention()
+        inpaint.enable_model_cpu_offload()
+      pipelines.append(inpaint)
 
-    # Load the image variation model
-    with torch.no_grad():
-        imgvariation = StableDiffusionImageVariationPipeline.from_pretrained('lambdalabs/sd-image-variations-diffusers', revision="v2.0")
-        imgvariation.to(device)
-        pipelines.append(imgvariation)
-
-    # Clear intermediate variables
-    del txt2img, img2img, inpaint, imgvariation
+    # * Clear intermediate variables
+    del txt2img, img2img, inpaint
 
     return tuple(pipelines)
+
+def load_mlsd_detector(model_id : str):
+   return MLSDdetector.from_pretrained(model_id)
 
 def zip_images(file_objects : BytesIO):
   """Zip images given their file objects. It returns a zip folder with the corresponding image file name and its value"""
