@@ -175,17 +175,14 @@ def save_images(images : list[Image.Image]) -> BytesIO:
 def images_to_b64(images : list[Image.Image]) -> str:
   """Convert a list of images into a JSON string with each image encoded in base64 format"""
 
-  # * Initialize an empty dictionary to store the encoded images:
-    # * Example: {Image 1 : 0xbcmnshalla}
-  encoded_images_dict = {}
-  # * Index each image with its respective index 
+  # * Initialize an empty list to store the dictionaries that afterwords will be converted to a JSON:
+  encoded_images_list = []
+  # * Index each image with its respective index
   for num_image, image in enumerate(images):
     # * Create a memory buffer (Space of memory in RAM) to store the image data in bytes
     buffer = BytesIO()
     # * Save each image in memory
     image.save(buffer, format="PNG")
-    # * Get the image type
-    image_type = image.format
     # * Encode each buffer's value (Image in binary) in base64
       # * Buffer.getvalue() gets the image binary data in hex format --> xd9\x80\xb4\xa1\x14I^ \xd3\x94\xd8$\x11\xac\x14\x82\xc2\xe3\x9a\xc1\x80\xe8\x01d\x920\'\x16\x13\x91\x1bJ}\xebI\xa5\xc0\xe3|r\xc3:Y
       # * Then encode this binary data in base64:
@@ -195,16 +192,17 @@ def images_to_b64(images : list[Image.Image]) -> str:
         # * - Convert the 8-bit chunks into chunks of 6 bits by simply re-grouping the digits --> 01010000 01111001 01110100 01101000 01101111 01101110 are 010100 000111 100101 110100 011010 000110 111101 101110
         # * - Convert the 6-bit binary groups to their respective decimal values. --> 010100 000111 100101 110100 011010 000110 111101 101110 are 20, 7, 37, 52, 26, 6, 61, 46
         # * - Using a base64 encoding table, assign the respective base64 character for each decimal value --> 20, 7, 37, 52, 26, 6, 61, 46 are UHl0aG9u
-    encodedB64_image = base64.urlsafe_b64encode(buffer.getvalue())
-    # * Decode it in latin1 in order to be a string compatible with JSON
-    encodedB64_image_string = encodedB64_image.decode('latin1')
+    encodedB64_image = base64.b64encode(buffer.getvalue())
+    # * Decode it in ascii in order to be a string compatible with JSON
+    encodedB64_image_string = encodedB64_image.decode('ascii')
     # * Create each instance of the dictionary with the following values:
       # * Image number
       # * Encoded image string
-      # * Image type
-    encoded_images_dict["Image number"] = num_image + 1
-    encoded_images_dict["Encoded image"] = encodedB64_image_string
-    encoded_images_dict["Image type"] = image_type
+    encoded_image_dict = {
+            "Image number": num_image + 1,
+            "Encoded image": encodedB64_image_string,
+            }
+    encoded_images_list.append(encoded_image_dict)
   # * Convert the image dictionary to a JSON and return it
-  jsonImages = json.dumps(encoded_images_dict)
+  jsonImages = json.dumps(encoded_images_list)
   return jsonImages
