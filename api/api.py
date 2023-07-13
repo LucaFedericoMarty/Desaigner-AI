@@ -17,12 +17,15 @@ from io import BytesIO
 from accelerate import PartialState
 
 from fastapi import FastAPI, Response, Request, HTTPException, UploadFile, Query, Body
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, Annotated
 
-from functions.helper_functions import images_to_b64, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , save_images, models  
+from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
+
+from functions.helper_functions import images_to_b64, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, models  
 
 # http://127.0.0.1:8000
 
@@ -67,7 +70,7 @@ def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
     # * Create the images using the given prompt and some other parameters
     images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images, generator=torch.Generator(device="cuda" if torch.cuda.is_available() else "cpu")).images
     # * Save each image into a space in memory
-    file_objects = save_images(images)
+    file_objects = images_to_bytes(images)
     # * Create an image grid
     grid = image_grid(images)
     # * Zip each image file into a zip folder
@@ -104,6 +107,58 @@ def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", 
     headers = {"Content-Disposition": f"attachment; filename={filename}"}
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
+
+@app.post("/txt2img3")
+def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
+                style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
+                environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
+                region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")], 
+                steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
+                guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
+                num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2):
+    
+    """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
+
+    # * Create the prompt for creating the image
+    prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
+    # * Create the negative prompt for avoiding certain concepts in the photo
+    negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
+    # * Create the images using the given prompt and some other parameters
+    images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
+    # * Images to list of bytes
+    imagesBytes = images_to_bytes(images)
+    # * Create an image grid
+    grid = image_grid(images)
+
+    # * Set personalized  filename and create the headers for the JSON file
+    filename = "bytesmages.jpg"
+    headers = {"Content-Disposition": f"attachment; filename={filename}"}
+
+    StreamingResponse(imagesBytes, media_type="image/jpeg", headers=headers)
+
+@app.post("/txt2imgmime")
+def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
+                style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
+                environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
+                region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")], 
+                steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
+                guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
+                num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2):
+    
+    """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
+
+    # * Create the prompt for creating the image
+    prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
+    # * Create the negative prompt for avoiding certain concepts in the photo
+    negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
+    # * Create the images using the given prompt and some other parameters
+    images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
+    # * Images to list of bytes
+    multipart_data = images_to_mime(images)
+    # * Create an image grid
+    grid = image_grid(images)
+
+    StreamingResponse(iter([multipart_data.as_bytes()]), media_type="multipart/related")
 
 @app.post("/img2img")
 def img2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],

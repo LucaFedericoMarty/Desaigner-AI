@@ -20,6 +20,10 @@ import base64
 from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
 import json
 
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
+
 # * Alias for models
 
 models = DiffusionPipeline, StableDiffusionControlNetPipeline, StableDiffusionInpaintPipeline
@@ -156,8 +160,8 @@ def zip_images(file_objects : BytesIO):
       zipf.writestr(f'image {i + 1}.png', file_obj.getvalue())
   return zip_filename
 
-def save_images(images : list[Image.Image]) -> BytesIO:
-  """Save the images file objects in a list"""
+def images_to_bytes(images : list[Image.Image]) -> list[BytesIO]:
+  """Convert images to a list of bytes"""
 
   # * Initialize a list to store the image file objects
   file_objects= []
@@ -171,6 +175,27 @@ def save_images(images : list[Image.Image]) -> BytesIO:
     buffer.seek(0)
     file_objects.append(buffer)
   return file_objects
+
+def images_to_mime(images : list[Image.Image]) -> list[BytesIO]:
+  """Convert images to mime objects"""
+
+  # * Create a Multipart message
+  multipart_data = MIMEMultipart()
+  # * Index the images
+  for image in images:
+    # * Create the buffer for storing each image
+    buffer = BytesIO()
+    # * Save each image in the buffer
+    image.save(buffer, format="PNG")
+    # * Store the image file objects in the list previously mentioned
+    buffer.seek(0)
+    # * Create a MIMEImage object for each image
+    image_part = MIMEImage(buf.read(), _subtype="jpeg")
+    # * Set filename
+    image_part.add_header("Content-Disposition", f'inline; filename="{data}_{i}.jpg"')
+    # * Attach the image to the Multipart message    
+    multipart_data.attach(image_part)  
+  return multipart_data
 
 def images_to_b64(images : list[Image.Image]) -> str:
   """Convert a list of images into a JSON string with each image encoded in base64 format"""
@@ -206,3 +231,4 @@ def images_to_b64(images : list[Image.Image]) -> str:
   # * Convert the image dictionary to a JSON and return it
   jsonImages = json.dumps(encoded_images_list)
   return jsonImages
+
