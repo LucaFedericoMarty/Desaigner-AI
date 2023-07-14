@@ -190,7 +190,7 @@ def images_to_mime(images : list[Image.Image]) -> list[BytesIO]:
     # * Store the image file objects in the list previously mentioned
     buffer.seek(0)
     # * Create a MIMEImage object for each image
-    image_part = MIMEImage(buffer.getvalue(), _subtype="jpeg")
+    image_part = MIMEImage(buffer.read(), _subtype="png")
     # * Set filename
     image_part.add_header("Content-Disposition", f'inline; filename="Image {counter}.jpg"')
     # * Attach the image to the Multipart message    

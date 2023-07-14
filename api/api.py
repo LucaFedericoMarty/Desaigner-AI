@@ -158,7 +158,7 @@ def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design",
     # * Create an image grid
     grid = image_grid(images)
 
-    StreamingResponse(iter([multipart_data.as_bytes()]), media_type="multipart/related")
+    StreamingResponse([data for data in multipart_data.as_bytes()], media_type="multipart/related")
 
 @app.post("/img2img")
 def img2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
