@@ -134,7 +134,7 @@ def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design",
     filename = "bytesmages.jpg"
     headers = {"Content-Disposition": f"attachment; filename={filename}"}
 
-    StreamingResponse(imagesBytes, media_type="image/jpeg", headers=headers)
+    StreamingResponse(iter(imagesBytes), media_type="image/jpeg", headers=headers)
 
 @app.post("/txt2imgmime")
 def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],

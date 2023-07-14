@@ -182,7 +182,7 @@ def images_to_mime(images : list[Image.Image]) -> list[BytesIO]:
   # * Create a Multipart message
   multipart_data = MIMEMultipart()
   # * Index the images
-  for image in images:
+  for counter, image in enumerate(images):
     # * Create the buffer for storing each image
     buffer = BytesIO()
     # * Save each image in the buffer
@@ -190,11 +190,12 @@ def images_to_mime(images : list[Image.Image]) -> list[BytesIO]:
     # * Store the image file objects in the list previously mentioned
     buffer.seek(0)
     # * Create a MIMEImage object for each image
-    image_part = MIMEImage(buf.read(), _subtype="jpeg")
+    image_part = MIMEImage(buffer.getvalue(), _subtype="jpeg")
     # * Set filename
-    image_part.add_header("Content-Disposition", f'inline; filename="{data}_{i}.jpg"')
+    image_part.add_header("Content-Disposition", f'inline; filename="Image {counter}.jpg"')
     # * Attach the image to the Multipart message    
-    multipart_data.attach(image_part)  
+    multipart_data.attach(image_part)
+  print(multipart_data)  
   return multipart_data
 
 def images_to_b64(images : list[Image.Image]) -> str:
