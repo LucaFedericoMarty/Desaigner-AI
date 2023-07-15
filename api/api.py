@@ -25,7 +25,7 @@ from typing import Optional, Annotated
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 
-from functions.helper_functions import images_to_b64, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, models  
+from functions.helper_functions import images_to_b64, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, images_to_mime2, models  
 
 # http://127.0.0.1:8000
 
@@ -127,14 +127,14 @@ def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design",
     images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     # * Images to list of bytes
     imagesBytes = images_to_bytes(images)
+    # * Encode the images bytes list
+    imagesBytesFinal = [bytes_final for bytes_final in imagesBytes] 
     # * Create an image grid
     grid = image_grid(images)
+    print(type(imagesBytes))
+    #print(type(imagesBytesEncoded))
 
-    # * Set personalized  filename and create the headers for the JSON file
-    filename = "bytesmages.jpg"
-    headers = {"Content-Disposition": f"attachment; filename={filename}"}
-
-    StreamingResponse(iter(imagesBytes), media_type="image/jpeg", headers=headers)
+    return imagesBytesFinal
 
 @app.post("/txt2imgmime")
 def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
@@ -158,7 +158,7 @@ def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design",
     # * Create an image grid
     grid = image_grid(images)
 
-    StreamingResponse([data for data in multipart_data.as_bytes()], media_type="multipart/related")
+    return StreamingResponse(iter(multipart_data), media_type="multipart/related")
 
 @app.post("/img2img")
 def img2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],

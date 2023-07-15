@@ -172,11 +172,11 @@ def images_to_bytes(images : list[Image.Image]) -> list[BytesIO]:
     # * Save each image in the buffer
     image.save(buffer, format="PNG")
     # * Store the image file objects in the list previously mentioned
-    buffer.seek(0)
-    file_objects.append(buffer)
+    #buffer.seek(0)
+    file_objects.append(buffer.getvalue().decode("latin-1"))
   return file_objects
 
-def images_to_mime(images : list[Image.Image]) -> list[BytesIO]:
+def images_to_mime(images : list[Image.Image]):
   """Convert images to mime objects"""
 
   # * Create a Multipart message
@@ -192,11 +192,37 @@ def images_to_mime(images : list[Image.Image]) -> list[BytesIO]:
     # * Create a MIMEImage object for each image
     image_part = MIMEImage(buffer.read(), _subtype="png")
     # * Set filename
-    image_part.add_header("Content-Disposition", f'inline; filename="Image {counter}.jpg"')
+    image_part.add_header("Content-Disposition", f'inline; filename="Image {counter}.png"')
     # * Attach the image to the Multipart message    
     multipart_data.attach(image_part)
-  print(multipart_data)  
-  return multipart_data
+  print(multipart_data)
+  print(multipart_data.as_bytes())  
+  return multipart_data.as_bytes()
+
+def images_to_mime2(images : list[Image.Image]) -> list[BytesIO]:
+  """Convert images to mime objects"""
+
+   # Create the multipart content
+  content = b''
+
+  # * Index the images
+  for image in images:
+    # * Create the buffer for storing each image
+    buffer = BytesIO()
+    # * Save each image in the buffer
+    image.save(buffer, format="PNG")
+    # * Store the image file objects in the list previously mentioned
+    buffer.seek(0)
+    # Add the image data to the multipart content
+    content += b'--boundary\r\n'
+    content += b'Content-Disposition: form-data; name="image"; filename="image.jpg"\r\n'
+    content += b'Content-Type: image/jpeg\r\n\r\n'
+    content += buffer.getvalue() + b'\r\n'
+
+    # Add the closing boundary to the multipart content
+    content += b'--boundary--\r\n'
+  
+  return content
 
 def images_to_b64(images : list[Image.Image]) -> str:
   """Convert a list of images into a JSON string with each image encoded in base64 format"""
