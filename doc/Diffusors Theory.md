@@ -197,9 +197,9 @@ Se encarga de procesar y acondicionar todos los inputs al modelo, sean vectores,
 ![Proceso 3 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/stable-diffusion-3.png?raw=true)
 ![Proceso 4 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/stable-diffusion-4.png?raw=true)
 
-![Creación 1 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/SD-GIF-1.gif?raw=true)
-![Creación 2 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/SD-GIF-2.gif?raw=true)
-![Creación 3 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/SD-GIF-3.gif?raw=true)
+![Creación 1 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/SD-Gif-1.gif)
+![Creación 2 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/SD-Gif-2.gif)
+![Creación 3 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/SD-Gif-3.gif)
 
 ## Fuentes
 
