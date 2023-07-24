@@ -12,17 +12,17 @@ Es una manera de generar imágenes pixel a pixel. Requiere de un gran esfuerzo c
 
 Se le añade **ruido** a una imagen **paso a paso**. A cada paso, se le agrega más ruido. La técnica utilizada para agregar ruido se llama [_Ruido Gaussiano_](https://www.sfu.ca/sonic-studio-webdav/handbook/Gaussian_Noise.html). Básicamente, esta técnica añade aleatoriedad a los datos ingresados, siguiendo un esquema de Gauss (Campana).
 
-![Forward Diffusion Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/forward-diffusion.webp")
+![Forward Diffusion Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/forward-diffusion.webp?raw=true)
 
 Esto sirve para **entrenar** una _CNN_ de **segmentación de imágenes** llamada [_U-Net_](https://towardsdatascience.com/understanding-u-net-61276b10f360), la cual debería predecir cuanto ruido se le añadió a una imagen.
 
-![Arquitectura U-Net]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/u-net-architecture.png")
+![Arquitectura U-Net](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/u-net-architecture.png?raw=true)
 
 ### Reverse Diffusion
 
 Se busca **predecir** cuanto **ruido** se **añadió** a una imagen para posteriormente **sustraerlo** de la misma, para obtener la **imagen sin ruido** alguno. Para lograr esto, se utiliza el predictor de ruido que entrenamos con [Forward Diffusion](###forward-diffusion) para hacer una estimación sobre la cantidad de ruido añadido. Una vez que se sabe esto, es posible sustraer esta cantidad de ruido a la imagen para obtener la imagen original.
 
-![Reverse Diffusion Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/reverse-diffusion.webp")
+![Reverse Diffusion Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/reverse-diffusion.webp?raw=true)
 
 1. Se genera una imagen con ruido de manera aleatoria.
 2. El modelo trata de predecir el ruido de la imagen
@@ -44,8 +44,8 @@ El VAE o “Variational Autoencoder”, es la herramienta encargada de **transfo
 - Encoder (Codificador): Le **baja la resolución** a la imagen en el espacio latente.
 - Decoder (Decodificador): **Restaura la imagen a su resolución** original antes de pasar por el codificador.
 
-![VAE Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/VAE.webp")
-![Encoder & Decoder Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/encoder-decoder.png")
+![VAE Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/VAE.webp?raw=true)
+![Encoder & Decoder Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/encoder-decoder.png?raw=true)
 
 El espacio latente para imágenes con una resolución de salida de 512x512 es de 4x64x64. Por lo tanto, vemos que es mucho **más rápido** aplicar todos los procesos de forward diffusion y reverse diffusion en este espacio.
 
@@ -76,7 +76,7 @@ Lo que buscamos con esto es **condicionar al predictor** de ruido, para que **pr
 3. Cada embedding es procesado por un “text transformer”
 4. Se pasa este resultado al predictor de ruido
 
-![Text Encoder Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/text-encoder.webp")
+![Text Encoder Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/text-encoder.webp?raw=true)
 
 ##### Tokenizer
 
@@ -152,15 +152,15 @@ Es un proceso en el que se busca **representar información no vectorizada** en 
 
 En este caso, buscamos convertir una **palabra a un vector**. Esto se logra con el mapeo de tales palabras a una forma vectorial, en la cual se almacenan de manera **numérica varios atributos y características**. Debido a que las características de los objetos se miden numéricamente, mientras **mayor similitud y relación en su significado tenga**, **más parecidos serán los valores** de los vectores.
 
-![Embedding Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/embedding.png")
+![Embedding Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/embedding.png?raw=true)
 
-![Word Vectors Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/word-vectors.png")
+![Word Vectors Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/word-vectors.png?raw=true)
 
 Podemos ver como los vectores de Rey y de Hombre son parecidos, al igual que Reina y Mujer lo son.
 
 Esta forma de representar información nos posibilita propiedades tan interesantes como la siguiente.
 
-![Vector Comparison Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/vector-comparison.png")
+![Vector Comparison Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/vector-comparison.png?raw=true)
 
 Vemos que si sustraemos el vector de Hombre del de Rey y a este resultado le sumamos el vector de mujer, obtenemos el vector de Reina.
 
@@ -174,32 +174,32 @@ Se encarga de procesar y acondicionar todos los inputs al modelo, sean vectores,
 
 1. Se genera una **matriz de ruido latente** en base a la **seed**, la cual si no se especifica, es aleatoria, mientras que si se le indica un número, generará una versión específica de la matriz de ruido latente. Si se utiliza la misma seed y prompt, la imagen tenderá a ser muy igual o idéntica.
 
-![Matriz Ruido Latente Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/random-tensor-latent.webp")
+![Matriz Ruido Latente Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/random-tensor-latent.webp?raw=true)
 
 2. El **predictor de ruido** ingresa la **matriz de ruido latente** y utiliza como **condición** o guía el resultado del text-conditioning sobre la prompt ingresada. Se obtiene el **ruido predicho** por la U-Net.
 
-![Predicción Ruido Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/predicted-noise.webp")
+![Predicción Ruido Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/predicted-noise.webp?raw=true)
 
 3. Se **sustrae** o resta el **ruido predicho** sobre la matriz de ruido latente.
 
-![Sustraer Ruido Predicho Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/substracted-noise.webp")
+![Sustraer Ruido Predicho Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/substracted-noise.webp?raw=true)
 
 4. Se **repiten los pasos 2 y 3** por una **X cantidad de veces**, llamadas “Steps”.
 
 5. El **decodificador** del VAE convierte la **matriz** del espacio latente a una **imagen normal** con la resolución original.
 
-![Decoder Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/decoder.webp")
+![Decoder Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/decoder.webp?raw=true)
 
 #### Ilustración Gráfica
 
-![Proceso 1 Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/stable-diffusion-1.png")
-![Proceso 2 Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/stable-diffusion-2.png")
-![Proceso 3 Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/stable-diffusion-3.png")
-![Proceso 4 Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/stable-diffusion-4.png")
+![Proceso 1 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/stable-diffusion-1.png?raw=true)
+![Proceso 2 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/stable-diffusion-2.png?raw=true)
+![Proceso 3 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/stable-diffusion-3.png?raw=true)
+![Proceso 4 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/img/stable-diffusion-4.png?raw=true)
 
-![Creación 1 Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/SD-GIF-1.gif")
-![Creación 2 Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/SD-GIF-2.gif")
-![Creación 3 Ilustración]("https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/SD-GIF-3.gif")
+![Creación 1 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/SD-GIF-1.gif?raw=true)
+![Creación 2 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/SD-GIF-2.gif?raw=true)
+![Creación 3 Ilustración](https://github.com/LucaFedericoMarty/Desaigner-AI/blob/dev/resource/SD-GIF-3.gif?raw=true)
 
 ## Fuentes
 
