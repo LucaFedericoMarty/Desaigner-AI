@@ -39,14 +39,14 @@ def create_prompt(budget : str, style : str , environment : str, region_weather 
 
   # * Create all the keywords or key phrases to weight
   budget += " budget"
-  budget_w = weight_keyword(budget, 0.8)
-  environment_w = weight_keyword(environment, 1.6)
-  style_w = weight_keyword(style, 1.4)
+  budget_w = weight_keyword(budget, 0.7)
+  environment_w = weight_keyword(environment, 1)
+  style_w = weight_keyword(style, 1.7)
   region_weather += " weather"
-  region_weather_w = weight_keyword(region_weather, 0.6)
+  region_weather_w = weight_keyword(region_weather, 0.4)
 
   # * Create the prompt with additional details to improve its performance
-  prompt = f"Interior design of a {environment_w}, {style_w}, for a {region_weather_w}, {budget_w}, ultra realistic render : 1.3, 3D art, 3D, hyperrealistic : 1.5, photorealistic : 1.5, ultradetailed 1:5, 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
+  prompt = f"Interior design, {environment_w}, {style_w}, {region_weather_w}, {budget_w}, ultra realistic render : 1.3, 3D art, 3D, hyperrealistic : 1.5, photorealistic : 1.5, ultradetailed 1:5, 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
   return prompt
 
 def image_grid(imgs, rows=2, cols=2):
@@ -83,7 +83,7 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  scheduler = UniPC
     components = []
 
     controlnet = ControlNetModel.from_pretrained(
-    controlnet_model, torch_dtype=torch.float16, use_safetensos=True)
+    controlnet_model, torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32), use_safetensos=True)
 
     # TODO: Load Stable Diffusion pipeline with OpenVINO or ONNX
 
@@ -121,15 +121,13 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  scheduler = UniPC
         img2img.enable_model_cpu_offload()
       pipelines.append(img2img)
 
-
+    """
     # * Load the inpaint model
     with torch.no_grad():
-      inpaint = StableDiffusionInpaintPipeline.from_pretrained(
+      inpaint = StableDiffusionInpaintPipeline.from_single_file(
           inpaint_model_id,
-          custom_pipeline="lpw_stable_diffusion",
-          torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32),
-          revision='fp16',
-          #use_safetensors=True
+          #custom_pipeline="lpw_stable_diffusion",
+          #torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32),
           )
       choose_scheduler(scheduler, inpaint)
       inpaint.enable_vae_slicing()
@@ -139,8 +137,10 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  scheduler = UniPC
         inpaint.enable_model_cpu_offload()
       pipelines.append(inpaint)
 
+    """
+
     # * Clear intermediate variables
-    del txt2img, img2img, inpaint
+    del txt2img, img2img
 
     return tuple(pipelines)
 

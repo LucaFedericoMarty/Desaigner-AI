@@ -15,10 +15,13 @@ safetensors = "*"
 streamlit = "*"
 xformers = "*"
 fastapi = {extras = ["all"], version = "*"}
-diffusers = {extras = ["torch"], version = "*"}
 controlnet-aux = "*"
 python-multipart = "*"
-torch = "==1.13.1"
+torch = "*"
+diffusers = {extras = ["torch"], version = "*"}
+compel = "*"
+omegaconf = "*"
+mediapipe = "*"
 
 [dev-packages]
 

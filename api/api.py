@@ -16,7 +16,7 @@ import numpy as np
 from io import BytesIO
 from accelerate import PartialState
 
-from fastapi import FastAPI, Response, Request, HTTPException, UploadFile, Query, Body
+from fastapi import FastAPI, Response, Request, HTTPException, UploadFile, Query, Body, File
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict
@@ -42,7 +42,7 @@ class design(BaseModel):
     num_images: int
     #input_image: Optional[Image.Image]
 
-txt2img_model, img2img_model, inpaint_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V3.0_VAE", inpaint_model_id = "runwayml/stable-diffusion-inpainting")
+txt2img_model, img2img_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.0_noVAE", inpaint_model_id = "https://huggingface.co/SG161222/Realistic_Vision_V5.0_noVAE/blob/main/Realistic_Vision_V5.0-inpainting.safetensors")
 mlsd_detector =  load_mlsd_detector(model_id='lllyasviel/ControlNet')#revision="fp16", #torch_dtype=torch.float16)
 
 @app.get("/")
@@ -165,7 +165,7 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
             region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
-            input_image : Annotated[UploadFile , Body(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")], 
+            input_image : UploadFile = File(...), 
             steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
             guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
             num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2):
@@ -176,10 +176,13 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
     prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
     # * Create the negative prompt for avoiding certain concepts in the photo
     negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
+    request_object_content = input_image.file.read()
+    input_img = Image.open(BytesIO(request_object_content))
     # * Convert the image to mlsd line detector format
-    input_image = mlsd_detector(input_image)
+    input_image_final = mlsd_detector(input_img)
+    print(input_image_final)
     # * Create the images using the given prompt and some other parameters
-    images = img2img_model(prompt=prompt, negative_prompt=negative_prompt, input_image=input_image, controlnet_conditioning_scale = 1.0, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
+    images = img2img_model(prompt=prompt, negative_prompt=negative_prompt, image=input_image_final, controlnet_conditioning_scale = 1.0, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     # * Encode the images in base64 and save them to a JSON file
     jsonImages = images_to_b64(images)
     # * Make compatible the JSON with the response
