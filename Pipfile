@@ -14,7 +14,6 @@ matplotlib = "*"
 safetensors = "*"
 streamlit = "*"
 xformers = "*"
-fastapi = {extras = ["all"], version = "*"}
 controlnet-aux = "*"
 python-multipart = "*"
 torch = "*"
@@ -23,6 +22,7 @@ compel = "*"
 omegaconf = "*"
 mediapipe = "*"
 starlette-validation-uploadfile = "*"
+fastapi = {extras = ["all"], version = "*"}
 
 [dev-packages]
 

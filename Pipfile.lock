@@ -342,10 +342,11 @@
                 "torch"
             ],
             "hashes": [
-                "sha256:6b0e5a92ff2b81a850466a2e6a8b32557afede9166a3579581fa1d890f16dd2c"
+                "sha256:186c07b4fbd83db79b1a4af5617c8142bcb71870ba4981cf1a50fc79365faac7",
+                "sha256:97163645ea0cef239a10ec2e99f30ac6f3b11d3e0119d26c1e96b3c7d27d1e60"
             ],
             "index": "pypi",
-            "version": "==0.19.1"
+            "version": "==0.19.2"
         },
         "dnspython": {
             "hashes": [

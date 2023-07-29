@@ -6,7 +6,8 @@ StableDiffusionImageVariationPipeline,
 EulerAncestralDiscreteScheduler,
 UniPCMultistepScheduler,
 StableDiffusionControlNetPipeline,
-ControlNetModel)
+ControlNetModel,
+DPMSolverMultistepScheduler)
 from controlnet_aux import MLSDdetector
 import torch
 from PIL import Image
@@ -32,7 +33,7 @@ def weight_keyword(keyword : str, weight : float) -> str:
     """Weight each keyword by the given weight"""
 
     # * Weight the keyword by the given weight in a string format
-    return (f'{keyword} : {weight}')
+    return (f'({keyword} : {weight})')
 
 def create_prompt(budget : str, style : str , environment : str, region_weather : str) -> str:
   """Creat an adequate prompt with each keyword weighted"""
@@ -46,7 +47,7 @@ def create_prompt(budget : str, style : str , environment : str, region_weather 
   region_weather_w = weight_keyword(region_weather, 0.4)
 
   # * Create the prompt with additional details to improve its performance
-  prompt = f"Interior design, {environment_w}, {style_w}, {region_weather_w}, {budget_w}, ultra realistic render : 1.3, 3D art, 3D, hyperrealistic : 1.5, photorealistic : 1.5, ultradetailed 1:5, 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
+  prompt = f"RAW photo, interior design, {environment_w}, {style_w}, {region_weather_w}, {budget_w}, (ultra realistic render : 1.3), 3D art, daylight, (hyperrealistic : 1.5), (photorealistic : 1.5), (ultradetailed 1:5), 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
   return prompt
 
 def image_grid(imgs, rows=2, cols=2):
@@ -75,7 +76,7 @@ def choose_scheduler(scheduler_name, model_pipeline):
     else:
       f"The scheduler {scheduler_name} is not compatible with {model_pipeline}"
 
-def load_all_pipelines(model_id: str, inpaint_model_id : str,  scheduler = UniPCMultistepScheduler, controlnet_model = "lllyasviel/control_v11p_sd15_mlsd") -> models:
+def load_all_pipelines(model_id: str, inpaint_model_id : str,  txt2img_scheduler = DPMSolverMultistepScheduler, img2img_scheduler = UniPCMultistepScheduler, controlnet_model = "lllyasviel/control_v11p_sd15_mlsd") -> models:
     """Load the model pipeline and configure it"""
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -96,7 +97,7 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  scheduler = UniPC
         #revision='fp16',
         use_safetensors=True,
         )
-      choose_scheduler(scheduler, txt2img)
+      choose_scheduler(txt2img_scheduler, txt2img)
       txt2img.enable_vae_slicing()
       txt2img.enable_attention_slicing()
       if torch.cuda.is_available():
@@ -114,6 +115,7 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  scheduler = UniPC
           #revision='fp16',
           use_safetensors=True,
           controlnet=controlnet)
+      choose_scheduler(img2img_scheduler, img2img)
       img2img.enable_vae_slicing()
       img2img.enable_attention_slicing()
       if torch.cuda.is_available():

@@ -27,7 +27,6 @@ from typing import Optional, Annotated
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 
-from starlette.middleware.base import BaseMiddleware
 from starlette_validation_uploadfile import ValidateUploadFileMiddleware
 
 from functions.helper_functions import images_to_b64, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, images_to_mime2, models  
@@ -41,29 +40,25 @@ app = FastAPI(
 
 # * Class for counting the process time of the request
 
-class CounterMiddleware(BaseMiddleware):
-    async def add_process_time_header(request: Request, call_next):
-        start_time = time.time()
-        response = await call_next(request)
-        process_time = time.time() - start_time
-        response.headers["X-Process-Time"] = str(process_time)
-        return response
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = time.strftime("%M:%S", time.gmtime(process_time))
+    return response
     
 # * Origings for CORS requests    
     
 origins = ["http://localhost:8000", "http://localhost:3000"]
 
-# * Adding Counter Class to the Middleware
-
-app.add_middleware(CounterMiddleware)
-
 # * Adding CORS Class to the Middleware
 
-app.add_middleware(CORSMiddleware(
+app.add_middleware(
+    CORSMiddleware,
     allow_origins=origins,
     allow_methods=["*"], 
     allow_credentials=True)
-    )
 
 # TODO: Check if use this middleware instead of manually creating HTTP Exceptions
 
