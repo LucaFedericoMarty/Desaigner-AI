@@ -97,7 +97,7 @@ def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
             region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
             steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
-            guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
+            guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 7, 
             num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2):
             
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
@@ -206,7 +206,7 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
             region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
-            input_image : UploadFile = File(...), 
+            input_image : Annotated[UploadFile, File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")], 
             steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
             guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
             num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2):
@@ -246,8 +246,8 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
             region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
-            input_image : Annotated[UploadFile , Body(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")], 
-            mask_image : Annotated[UploadFile , Body(title="Image mask of the input image", description="This image should be in black and white, and the white parts should be the parts you want to change and the black parts the ones you want to mantain")], 
+            input_image : Annotated[UploadFile , File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")], 
+            mask_image : Annotated[UploadFile , File(title="Image mask of the input image", description="This image should be in black and white, and the white parts should be the parts you want to change and the black parts the ones you want to mantain")], 
             steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
             guidance_scale : Annotated[float , Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
             num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2 
@@ -255,12 +255,26 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     """Inpainting route request that performs a text-to-image process in the mask of the image using a pre-trained Stable Diffusion Model"""
 
+    if input_image.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=415, detail=f"File type of {input_image.content_type} is not valid")
+    
+    if mask_image.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=415, detail=f"File type of {mask_image.content_type} is not valid")
+    
     # * Create the prompt for creating the image
     prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
     # * Create the negative prompt for avoiding certain concepts in the photo
     negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
+    # * Access the file object of the input image and get its contents
+    input_image_file_object_content = input_image.file.read()
+    # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
+    input_img = Image.open(BytesIO(input_image_file_object_content))
+    # * Access the file object of the maske image and get its contents
+    mask_image_file_object_content = mask_image.file.read()
+    # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
+    mask_img = Image.open(BytesIO(mask_image_file_object_content))
     # * Create the images using the given prompt and some other parameters
-    images = inpaint_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, image=input_image, mask_image=mask_image, num_images_per_prompt=num_images).images
+    images = inpaint_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, image=input_img, mask_image=mask_img, num_images_per_prompt=num_images).images
     # * Encode the images in base64 and save them to a JSON file
     jsonImages = images_to_b64(images)
     # * Make compatible the JSON with the response
