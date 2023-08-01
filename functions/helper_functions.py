@@ -80,11 +80,14 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  txt2img_scheduler
     """Load the model pipeline and configure it"""
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # * Set the torch dtype to float16 if GPU are available, else set to float16, since float16 is not compatible with CPUs.
+    torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32)
     pipelines = []
-    components = []
+
+    # * Load the MLSD controlnet model pipeline
 
     controlnet = ControlNetModel.from_pretrained(
-    controlnet_model, torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32), use_safetensos=True)
+    controlnet_model, torch_dtype=torch_dtype, use_safetensos=True)
 
     # TODO: Load Stable Diffusion pipeline with OpenVINO or ONNX
 
@@ -93,7 +96,7 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  txt2img_scheduler
       txt2img = StableDiffusionPipeline.from_pretrained(
         model_id,
         custom_pipeline="lpw_stable_diffusion",
-        torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32),
+        torch_dtype=torch_dtype,
         #revision='fp16',
         use_safetensors=True,
         )
@@ -111,7 +114,7 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  txt2img_scheduler
       img2img = StableDiffusionControlNetPipeline.from_pretrained(
           model_id,
           #custom_pipeline="lpw_stable_diffusion",
-          torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32),
+          torch_dtype=torch_dtype,
           #revision='fp16',
           use_safetensors=True,
           controlnet=controlnet)
@@ -129,7 +132,7 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  txt2img_scheduler
       inpaint = StableDiffusionInpaintPipeline.from_single_file(
           inpaint_model_id,
           #custom_pipeline="lpw_stable_diffusion",
-          #torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32),
+          #torch_dtype=torch_dtype,
           )
       choose_scheduler(scheduler, inpaint)
       inpaint.enable_vae_slicing()
