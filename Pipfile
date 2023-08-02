@@ -23,6 +23,7 @@ omegaconf = "*"
 mediapipe = "*"
 starlette-validation-uploadfile = "*"
 fastapi = {extras = ["all"], version = "*"}
+python-jose = {extras = ["cryptography"], version = "*"}
 
 [dev-packages]
 

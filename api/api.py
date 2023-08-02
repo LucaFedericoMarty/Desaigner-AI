@@ -17,7 +17,8 @@ from io import BytesIO
 from accelerate import PartialState
 import time
 
-from fastapi import FastAPI, Response, Request, HTTPException, UploadFile, Query, Body, File
+from fastapi import FastAPI, Response, Request, HTTPException, UploadFile, Query, Body, File, Depends
+from fastapi.security import OAuth2PasswordBearer
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,6 +38,8 @@ app = FastAPI(
     title="DesAIgner's Stable Diffusion API",
     description="This API provides the service of creating **images** via **Stable Diffusion pre-trained models**",
     version="0.0.1")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # * Class for counting the process time of the request
 
