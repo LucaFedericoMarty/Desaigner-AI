@@ -130,12 +130,12 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  txt2img_scheduler
     # * Load the inpaint model
     with torch.no_grad():
       inpaint = StableDiffusionInpaintPipeline.from_single_file(
-          inpaint_model_id,
-          #custom_pipeline="lpw_stable_diffusion",
-          #torch_dtype=torch_dtype,
-          )
-      choose_scheduler(scheduler, inpaint)
-      inpaint.enable_vae_slicing()
+        inpaint_model_id,
+        #custom_pipeline="lpw_stable_diffusion",
+        #torch_dtype=torch_dtype,
+        )
+      choose_scheduler(txt2img_scheduler, inpaint)
+      #inpaint.enable_vae_slicing()
       inpaint.enable_attention_slicing()
       if torch.cuda.is_available():
         inpaint.enable_xformers_memory_efficient_attention()

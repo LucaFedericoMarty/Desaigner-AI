@@ -83,7 +83,7 @@ class design(BaseModel):
     num_images: int
     #input_image: Optional[Image.Image]
 
-txt2img_model, img2img_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.0_noVAE", inpaint_model_id = "https://huggingface.co/SG161222/Realistic_Vision_V5.0_noVAE/blob/main/Realistic_Vision_V5.0-inpainting.safetensors")
+txt2img_model, img2img_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.0_noVAE", inpaint_model_id = "https://huggingface.co/SG161222/Realistic_Vision_V5.1_noVAE/blob/main/Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors")
 mlsd_detector =  load_mlsd_detector(model_id='lllyasviel/ControlNet')#revision="fp16", #torch_dtype=torch.float16)
 
 @app.get("/")
@@ -126,7 +126,7 @@ def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", 
                 region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")], 
                 steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
                 guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
-                num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2):
+                num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=1, le=6)] = 2):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
@@ -221,9 +221,9 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
     # * Create the negative prompt for avoiding certain concepts in the photo
     negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
     # * Access the file object and get its contents
-    image_file_object_content = input_image.file.read()
+    input_image_file_object_content = input_image.file.read()
     # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
-    input_img = Image.open(BytesIO(image_file_object_content))
+    input_img = Image.open(BytesIO(input_image_file_object_content))
     # * Convert the image to mlsd line detector format
     input_image_final = mlsd_detector(input_img)
     # * Create the images using the given prompt and some other parameters
