@@ -41,14 +41,14 @@ def create_prompt(budget : str, style : str , environment : str, region_weather 
   # * Create all the keywords or key phrases to weight
   budget += " budget"
   budget_w = weight_keyword(budget, 0.7)
-  environment_w = weight_keyword(environment, 1)
+  environment_w = weight_keyword(environment, 1.2)
+  style += " style"
   style_w = weight_keyword(style, 1.7)
   region_weather += " weather"
   region_weather_w = weight_keyword(region_weather, 0.4)
 
   # * Create the prompt with additional details to improve its performance
-  prompt = f"RAW photo, interior design, {environment_w}, {style_w}, {region_weather_w}, {budget_w}, (ultra realistic render : 1.3), 3D art, daylight, (hyperrealistic : 1.5), (photorealistic : 1.5), (ultradetailed 1:5), 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
-  return prompt
+  return f"RAW photo, masterpiece, interior design, {environment_w}, {style_w}, {region_weather_w}, {budget_w}, ultra realistic render, 3D art, daylight, hyperrealistic, photorealistic, ultradetailed, 8k, soft lighting, high quality, film grain, Fujifilm XT3"
 
 def image_grid(imgs, rows=2, cols=2):
   """Generate an image grid given a number of rows and columns"""
@@ -106,7 +106,7 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  txt2img_scheduler
       if torch.cuda.is_available():
         txt2img.enable_xformers_memory_efficient_attention()
         txt2img.enable_model_cpu_offload()
-      components = txt2img.components
+      #components = txt2img.components
       pipelines.append(txt2img)
 
     # * Load the txt2img guided with controlnet model used as an img2img model
