@@ -263,4 +263,3 @@ def images_to_b64(images : list[Image.Image]) -> str:
   # * Convert the image dictionary to a JSON and return it
   jsonImages = json.dumps(encoded_images_list)
   return jsonImages
-
