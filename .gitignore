@@ -1,2 +1,1 @@
-/.env
-/api/auth/keys.env
+*.env
