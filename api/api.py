@@ -34,7 +34,7 @@ from email.mime.image import MIMEImage
 from starlette_validation_uploadfile import ValidateUploadFileMiddleware
 
 from fastapi.security.api_key import APIKey
-from auth import auth 
+from api.auth.auth import get_api_key 
 
 from functions.helper_functions import images_to_b64, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, images_to_mime2, models  
 
@@ -100,14 +100,14 @@ def test_api():
     return {"welcome_message" : "Welcome to my REST API"}
 
 
-# Lockedown Route
+# * Lockedown Route
 @app.get("/secure")
-async def info(api_key: APIKey = Depends(auth.get_api_key)):
+async def info(api_key: APIKey = Depends(get_api_key)):
     return {
         "default variable": api_key
     }
 
-# Open Route
+# * Open Route
 @app.get("/open")
 async def info():
     return {
@@ -115,7 +115,7 @@ async def info():
     }
 
 
-@app.post("/txt2img")
+@app.post("/txt2img", dependencies=[Depends(get_api_key)])
 def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -143,7 +143,7 @@ def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
     # * Return the zip file with the name 'images.zip' and specify its media type
     return FileResponse(zip_filename, filename='images.zip', media_type='application/zip')
 
-@app.post("/txt2img2")
+@app.post("/txt2img2", dependencies=[Depends(get_api_key)])
 def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
                 environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -173,7 +173,7 @@ def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", 
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
-@app.post("/txt2img3")
+@app.post("/txt2img3", dependencies=[Depends(get_api_key)])
 def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
                 environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -201,7 +201,7 @@ def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design",
 
     return imagesBytesFinal
 
-@app.post("/txt2imgmime")
+@app.post("/txt2imgmime", dependencies=[Depends(get_api_key)])
 def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
                 environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -225,7 +225,7 @@ def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design",
 
     return StreamingResponse(iter(multipart_data), media_type="multipart/related")
 
-@app.post("/img2img")
+@app.post("/img2img", dependencies=[Depends(get_api_key)])
 def img2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -265,7 +265,7 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
-@app.post("/inpaint")
+@app.post("/inpaint", dependencies=[Depends(get_api_key)])
 def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -312,7 +312,7 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
-@app.post("/image_variation")
+@app.post("/image_variation", dependencies=[Depends(get_api_key)])
 def image_variation(prompt : Annotated[str , Query(title="Prompt for creating images", description="Text to Image Diffusers usually benefit from a more descriptive prompt, try writing detailed things")],
             input_image : Annotated[UploadFile , Body(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")],  
             steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 

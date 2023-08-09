@@ -10,8 +10,8 @@ from fastapi.security.api_key import APIKeyHeader, APIKeyQuery
 from fastapi import Security, HTTPException, Depends
 from starlette.status import HTTP_401_UNAUTHORIZED
 
-# * Find the path of the dotenv keys file
-dotenv_path = find_dotenv(filename='keys.env', raise_error_if_not_found=True)
+# * Find the path of the dotenv file
+dotenv_path = find_dotenv(filename='api/auth/.env', raise_error_if_not_found=True)
 
 # * Load the enviromental variables from the dotenv path
 load_dotenv(dotenv_path)
