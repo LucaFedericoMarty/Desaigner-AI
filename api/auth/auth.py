@@ -6,7 +6,7 @@ from dotenv import load_dotenv, find_dotenv
 
 import os
 
-from fastapi.security.api_key import APIKeyHeader, APIKeyQuery
+from fastapi.security.api_key import APIKeyHeader, APIKeyQuery, APIKeyCookie
 from fastapi import Security, HTTPException, Depends
 from starlette.status import HTTP_401_UNAUTHORIZED
 
@@ -19,18 +19,22 @@ load_dotenv(dotenv_path)
 # * Load the list of API KEYS
 API_KEYS = os.getenv(key='API_KEYS')
 
+# * Create instances of api key methods
 api_key_query = APIKeyQuery(name="api-key", auto_error=False)
 api_key_header = APIKeyHeader(name="x-api-key", auto_error=False)
+api_key_cookie = APIKeyCookie(name="x-api-key", auto_error=False)
 
 def get_api_key(
     api_key_query: str = Security(api_key_query),
     api_key_header: str = Security(api_key_header),
-) -> str:
-    """Retrieve and validate an API key from the query parameters or HTTP header.
+    api_key_cookie: str = Security(api_key_cookie),) -> str:
+
+    """Retrieve and validate an API key from the query parameters the HTTP header or via the cookies.
 
     Args:
         api_key_query: The API key passed as a query parameter.
         api_key_header: The API key passed in the HTTP header.
+        api_key_cookie: The API key passed via the cookies.
 
     Returns:
         The validated API key.
@@ -38,10 +42,13 @@ def get_api_key(
     Raises:
         HTTPException: If the API key is invalid or missing.
     """
+
     if api_key_query in API_KEYS:
         return api_key_query
     if api_key_header in API_KEYS:
         return api_key_header
+    if api_key_cookie in API_KEYS:
+        return api_key_cookie
     raise HTTPException(
         status_code=HTTP_401_UNAUTHORIZED,
         detail="Invalid or missing API Key",

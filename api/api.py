@@ -18,7 +18,7 @@ from accelerate import PartialState
 import time
 from datetime import datetime, timedelta
 
-from fastapi import FastAPI, Response, Request, HTTPException, status, UploadFile, Query, Body, File, Depends
+from fastapi import FastAPI, Response, Request, HTTPException, status, UploadFile, Query, Body, File, Depends, Security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
@@ -102,27 +102,30 @@ def test_api():
 
 # * Lockedown Route
 @app.get("/secure")
-async def info(api_key: APIKey = Depends(get_api_key)):
+async def info(api_key: APIKey = Security(get_api_key)):
+    """A private endpoint that requires a valid API key to be provided."""
     return {
-        "default variable": api_key
+        "validated api key": api_key
     }
 
 # * Open Route
 @app.get("/open")
 async def info():
+    """An open endpoint that does not require authentication"""
     return {
         "default variable": "Open Route"
     }
 
 
-@app.post("/txt2img", dependencies=[Depends(get_api_key)])
+@app.post("/txt2img")
 def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
             region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
             steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
             guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 7, 
-            num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2):
+            num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2,
+            api_key: str = Security(get_api_key),):
             
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
@@ -143,14 +146,15 @@ def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
     # * Return the zip file with the name 'images.zip' and specify its media type
     return FileResponse(zip_filename, filename='images.zip', media_type='application/zip')
 
-@app.post("/txt2img2", dependencies=[Depends(get_api_key)])
+@app.post("/txt2img2")
 def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
                 environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
                 region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")], 
                 steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
                 guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
-                num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=1, le=6)] = 2):
+                num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=1, le=6)] = 2,
+                api_key: str = Security(get_api_key),):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
@@ -173,14 +177,15 @@ def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", 
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
-@app.post("/txt2img3", dependencies=[Depends(get_api_key)])
+@app.post("/txt2img3")
 def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
                 environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
                 region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")], 
                 steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
                 guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
-                num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2):
+                num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2,
+                api_key: str = Security(get_api_key),):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
@@ -201,14 +206,15 @@ def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design",
 
     return imagesBytesFinal
 
-@app.post("/txt2imgmime", dependencies=[Depends(get_api_key)])
+@app.post("/txt2imgmime")
 def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
                 environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
                 region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")], 
                 steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
                 guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
-                num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2):
+                num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2,
+                api_key: str = Security(get_api_key),):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
@@ -225,7 +231,7 @@ def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design",
 
     return StreamingResponse(iter(multipart_data), media_type="multipart/related")
 
-@app.post("/img2img", dependencies=[Depends(get_api_key)])
+@app.post("/img2img")
 def img2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -233,7 +239,8 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
             input_image : Annotated[UploadFile, File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")], 
             steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
             guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
-            num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2):
+            num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2,
+            api_key: str = Security(get_api_key),):
     
     """Image-to-image route request that performs a image-to-image process using a pre-trained Stable Diffusion Model"""
 
@@ -265,7 +272,7 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
-@app.post("/inpaint", dependencies=[Depends(get_api_key)])
+@app.post("/inpaint")
 def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -274,8 +281,8 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
             mask_image : Annotated[UploadFile , File(title="Image mask of the input image", description="This image should be in black and white, and the white parts should be the parts you want to change and the black parts the ones you want to mantain")], 
             steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
             guidance_scale : Annotated[float , Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
-            num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2 
-            ):
+            num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2, 
+            api_key: str = Security(get_api_key),):
 
     """Inpainting route request that performs a text-to-image process in the mask of the image using a pre-trained Stable Diffusion Model"""
 
@@ -312,13 +319,13 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
-@app.post("/image_variation", dependencies=[Depends(get_api_key)])
+@app.post("/image_variation")
 def image_variation(prompt : Annotated[str , Query(title="Prompt for creating images", description="Text to Image Diffusers usually benefit from a more descriptive prompt, try writing detailed things")],
             input_image : Annotated[UploadFile , Body(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")],  
             steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
             guidance_scale : Annotated[float , Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
-            num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2 
-            ):
+            num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2, 
+            api_key: str = Security(get_api_key),):
     
     """Image variation route request that performs a CLIP process in the input image, that outputs a description of an image that afterwards is used as the prompt to create similar images"""
 
