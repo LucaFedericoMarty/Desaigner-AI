@@ -43,13 +43,30 @@ def get_api_key(
         HTTPException: If the API key is invalid or missing.
     """
 
+    if (api_key_query and api_key_header and api_key_cookie == None):
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED,
+            detail="Missing API Key",
+        )
+
     if api_key_query in API_KEYS:
         return api_key_query
+    elif api_key_query not in API_KEYS:
+        raise HTTPException(
+        status_code=HTTP_401_UNAUTHORIZED,
+        detail="Invalid API Key",
+    )
     if api_key_header in API_KEYS:
         return api_key_header
+    elif api_key_header not in API_KEYS:
+        raise HTTPException(
+        status_code=HTTP_401_UNAUTHORIZED,
+        detail="Invalid API Key",
+    )
     if api_key_cookie in API_KEYS:
         return api_key_cookie
-    raise HTTPException(
+    elif api_key_cookie not in API_KEYS:
+        raise HTTPException(
         status_code=HTTP_401_UNAUTHORIZED,
-        detail="Invalid or missing API Key",
+        detail="Invalid API Key",
     )
