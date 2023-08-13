@@ -36,7 +36,9 @@ from starlette_validation_uploadfile import ValidateUploadFileMiddleware
 from fastapi.security.api_key import APIKey
 from api.auth.auth import get_api_key 
 
-from functions.helper_functions import images_to_b64, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, images_to_mime2, models  
+from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, images_to_mime2, models  
+
+from api.schemas import Txt2ImgParamas, Img2ImgParams, InpaintParams, ImageResponse
 
 # http://127.0.0.1:8000
 
@@ -83,13 +85,6 @@ app.add_middleware(
 )
 
 """
-class design(BaseModel):
-    #model_config = ConfigDict(arbitrary_types_allowed=True)
-    prompt: str | None = None # * The | None = None makes the attribute optional 
-    steps: int
-    guidance_scale : float
-    num_images: int
-    #input_image: Optional[Image.Image]
 
 txt2img_model, img2img_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.0_noVAE", inpaint_model_id = "https://huggingface.co/SG161222/Realistic_Vision_V5.1_noVAE/blob/main/Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors")
 mlsd_detector =  load_mlsd_detector(model_id='lllyasviel/ControlNet')#revision="fp16", #torch_dtype=torch.float16)
@@ -117,7 +112,7 @@ async def info():
     }
 
 
-@app.post("/txt2img")
+@app.post("/txt2img/v1/v1")
 def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -125,7 +120,7 @@ def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
             steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
             guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 7, 
             num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2,
-            api_key: str = Security(get_api_key),):
+            api_key: APIKey = Security(get_api_key),):
             
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
@@ -146,7 +141,7 @@ def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
     # * Return the zip file with the name 'images.zip' and specify its media type
     return FileResponse(zip_filename, filename='images.zip', media_type='application/zip')
 
-@app.post("/txt2img2")
+@app.post("/txt2img/v1/v2")
 def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
                 environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -177,7 +172,25 @@ def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", 
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
-@app.post("/txt2img3")
+@app.post("/txt2img/v2/v1", response_model=ImageResponse)
+def txt2imgclass(params: Txt2ImgParamas, api_key: APIKey = Security(get_api_key)):
+    
+    """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
+
+    # * Create the prompt for creating the image
+    prompt = create_prompt(budget=params.budget, style=params.style, environment=params.environment, region_weather=params.region_weather)
+    # * Create the negative prompt for avoiding certain concepts in the photo
+    negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
+    # * Create the images using the given prompt and some other parameters
+    images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=params.steps, guidance_scale=params.guidance_scale, num_images_per_prompt=params.num_images).images
+    # * Encode the images in base64 and save them to a JSON file
+    b64Images = images_to_b64_v2(images)
+    # * Create an image grid
+    grid = image_grid(images)
+
+    return ImageResponse(images=b64Images, metadata=params.model_dump())
+
+@app.post("/txt2img/v1/v3")
 def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
                 environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -206,7 +219,7 @@ def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design",
 
     return imagesBytesFinal
 
-@app.post("/txt2imgmime")
+@app.post("/txt2img/v1/v4")
 def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
                 environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
