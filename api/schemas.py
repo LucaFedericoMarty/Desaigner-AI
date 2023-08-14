@@ -38,4 +38,3 @@ class InpaintParams(BaseModel):
 
 class ImageResponse(BaseModel):
     images: List[str] = Field(..., description="List of images in base64 format")
-    metadata: Dict = Field(..., description="Metadata")

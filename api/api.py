@@ -42,10 +42,28 @@ from api.schemas import Txt2ImgParamas, Img2ImgParams, InpaintParams, ImageRespo
 
 # http://127.0.0.1:8000
 
+tags_metadata = [
+    {
+        "name": "text2image",
+        "description": "Creating a new image from user preferences, without an image",
+    },
+
+    {
+        "name": "image2image",
+        "description": "Creating a similar image from user preferences and user's photo",
+    },
+
+    {
+        "name": "inpaint",
+        "description": "Creating a similar image from user preferences and selected parts of user's photo",
+    },
+]
+
 app = FastAPI(
     title="DesAIgner's Stable Diffusion API",
     description="This API provides the service of creating **images** via **Stable Diffusion pre-trained models**",
     version="0.0.1",
+    openapi_tags=tags_metadata,
     )
 
 # * Class for counting the process time of the request
@@ -112,7 +130,7 @@ async def info():
     }
 
 
-@app.post("/txt2img/v1/v1")
+@app.post("/txt2img/v1/v1", tags=["text2image"])
 def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -141,7 +159,7 @@ def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
     # * Return the zip file with the name 'images.zip' and specify its media type
     return FileResponse(zip_filename, filename='images.zip', media_type='application/zip')
 
-@app.post("/txt2img/v1/v2")
+@app.post("/txt2img/v1/v2", tags=["text2image"])
 def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
                 environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -172,7 +190,7 @@ def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", 
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
-@app.post("/txt2img/v2/v1", response_model=ImageResponse)
+@app.post("/txt2img/v2/v1", response_model=ImageResponse, tags=["text2image"])
 def txt2imgclass(params: Txt2ImgParamas, api_key: APIKey = Security(get_api_key)):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
@@ -188,9 +206,9 @@ def txt2imgclass(params: Txt2ImgParamas, api_key: APIKey = Security(get_api_key)
     # * Create an image grid
     grid = image_grid(images)
 
-    return ImageResponse(images=b64Images, metadata=params.model_dump())
+    return ImageResponse(images=b64Images)
 
-@app.post("/txt2img/v1/v3")
+@app.post("/txt2img/v1/v3", tags=["text2image"])
 def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
                 environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -219,7 +237,7 @@ def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design",
 
     return imagesBytesFinal
 
-@app.post("/txt2img/v1/v4")
+@app.post("/txt2img/v1/v4", tags=["text2image"])
 def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
                 environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -244,7 +262,7 @@ def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design",
 
     return StreamingResponse(iter(multipart_data), media_type="multipart/related")
 
-@app.post("/img2img")
+@app.post("/img2img", tags=["image2image"])
 def img2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
@@ -285,7 +303,7 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
-@app.post("/inpaint")
+@app.post("/inpaint", tags=["inpaint"])
 def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
             environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
