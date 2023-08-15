@@ -35,7 +35,7 @@ def weight_keyword(keyword : str, weight : float) -> str:
     # * Weight the keyword by the given weight in a string format
     return (f'({keyword} : {weight})')
 
-def create_prompt(budget : str, style : str , environment : str, region_weather : str) -> str:
+def create_prompt(budget : str, style : str , environment : str, weather : str, disability : str) -> str:
   """Creat an adequate prompt with each keyword weighted"""
 
   # * Create all the keywords or key phrases to weight
@@ -44,11 +44,13 @@ def create_prompt(budget : str, style : str , environment : str, region_weather 
   environment_w = weight_keyword(environment, 1.2)
   style += " style"
   style_w = weight_keyword(style, 1.7)
-  region_weather += " weather"
-  region_weather_w = weight_keyword(region_weather, 0.4)
+  weather += " weather"
+  weather_w = weight_keyword(weather, 0.4)
+  disability = f'adapted and usable for {disability} people'
+  disability_w = weight_keyword(disability, 0.5)
 
   # * Create the prompt with additional details to improve its performance
-  return f"RAW photo, masterpiece, interior design, {environment_w}, {style_w}, {region_weather_w}, {budget_w}, ultra realistic render, 3D art, daylight, hyperrealistic, photorealistic, ultradetailed, 8k, soft lighting, high quality, film grain, Fujifilm XT3"
+  return f"RAW photo, masterpiece, interior design, {environment_w}, {style_w}, {weather_w}, {budget_w}, ultra realistic render, 3D art, daylight, hyperrealistic, photorealistic, ultradetailed, 8k, soft lighting, high quality, film grain, Fujifilm XT3"
 
 def image_grid(imgs, rows=2, cols=2):
   """Generate an image grid given a number of rows and columns"""
@@ -287,3 +289,15 @@ def images_to_b64_v2(images : list[Image.Image]) -> str:
     encodedB64_image = base64.b64encode(buffer.getvalue())
     encoded_images_list.append(encodedB64_image)
   return encoded_images_list
+
+def size_upload_files(file):
+  """Get the size of an UploadFile file and return it"""
+
+  # * Get the file size (in bytes)
+  file.file.seek(0, 2)
+  file_size = file.file.tell()
+
+  # * Move the cursor back to the beginning
+  file.seek(0)
+
+  return file_size

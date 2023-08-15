@@ -32,13 +32,16 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 
 from starlette_validation_uploadfile import ValidateUploadFileMiddleware
+from starlette.status import HTTP_413_REQUEST_ENTITY_TOO_LARGE
 
 from fastapi.security.api_key import APIKey
 from api.auth.auth import get_api_key 
 
-from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, images_to_mime2, models  
+from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, images_to_mime2, size_upload_files, models  
 
 from api.schemas import Txt2ImgParamas, Img2ImgParams, InpaintParams, ImageResponse
+
+MB_IN_BYTES = 1048576
 
 # http://127.0.0.1:8000
 
@@ -132,18 +135,19 @@ async def info():
 
 @app.post("/txt2img/v1/v1", tags=["text2image"])
 def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
-            style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
-            environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
-            region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
-            steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
-            guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 7, 
+            style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
+            environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
+            weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
+            disability : Annotated[str , Query(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
+            steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20,
+            guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 7,
             num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2,
             api_key: APIKey = Security(get_api_key),):
             
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
     # * Create the prompt for creating the image
-    prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
+    prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
     # * Create the negative prompt for avoiding certain concepts in the photo
     negative_prompt = ("blurry : 1.3, abstract : 1.4, cartoon : 1.4, animated : 1.5, unrealistic : 1.6, watermark : 1.2, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed, image on TV : 1.5, TV turned on : 1.4")
     # * Intiliaze the list of file objects --> Direction in memory of files
@@ -161,18 +165,19 @@ def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
 @app.post("/txt2img/v1/v2", tags=["text2image"])
 def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
-                style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
-                environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
-                region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")], 
-                steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
-                guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
-                num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=1, le=6)] = 2,
-                api_key: str = Security(get_api_key),):
+                style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
+                environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
+                weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
+                disability : Annotated[str , Query(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
+                steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20,
+                guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 7,
+                num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2,
+                api_key: APIKey = Security(get_api_key),):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
     # * Create the prompt for creating the image
-    prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
+    prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather)
     # * Create the negative prompt for avoiding certain concepts in the photo
     negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
     # * Create the images using the given prompt and some other parameters
@@ -196,7 +201,7 @@ def txt2imgclass(params: Txt2ImgParamas, api_key: APIKey = Security(get_api_key)
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
     # * Create the prompt for creating the image
-    prompt = create_prompt(budget=params.budget, style=params.style, environment=params.environment, region_weather=params.region_weather)
+    prompt = create_prompt(budget=params.budget, style=params.style, environment=params.environment, weather=params.weather, disability=params.disability)
     # * Create the negative prompt for avoiding certain concepts in the photo
     negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
     # * Create the images using the given prompt and some other parameters
@@ -210,18 +215,19 @@ def txt2imgclass(params: Txt2ImgParamas, api_key: APIKey = Security(get_api_key)
 
 @app.post("/txt2img/v1/v3", tags=["text2image"])
 def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
-                style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
-                environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
-                region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")], 
-                steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
-                guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
+                style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
+                environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
+                weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
+                disability : Annotated[str , Query(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
+                steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20,
+                guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 7,
                 num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2,
-                api_key: str = Security(get_api_key),):
+                api_key: APIKey = Security(get_api_key),):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
     # * Create the prompt for creating the image
-    prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
+    prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
     # * Create the negative prompt for avoiding certain concepts in the photo
     negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
     # * Create the images using the given prompt and some other parameters
@@ -239,18 +245,19 @@ def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design",
 
 @app.post("/txt2img/v1/v4", tags=["text2image"])
 def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
-                style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
-                environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
-                region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")], 
-                steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
-                guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
+                style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
+                environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
+                weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
+                disability : Annotated[str , Query(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
+                steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20,
+                guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 7,
                 num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2,
-                api_key: str = Security(get_api_key),):
+                api_key: APIKey = Security(get_api_key),):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
     # * Create the prompt for creating the image
-    prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
+    prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
     # * Create the negative prompt for avoiding certain concepts in the photo
     negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
     # * Create the images using the given prompt and some other parameters
@@ -264,9 +271,10 @@ def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design",
 
 @app.post("/img2img", tags=["image2image"])
 def img2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
-            style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
-            environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
-            region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
+            style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
+            environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
+            weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
+            disability : Annotated[str , Query(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
             input_image : Annotated[UploadFile, File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")], 
             steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
             guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
@@ -278,8 +286,15 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
     if input_image.content_type not in ["image/jpeg", "image/png"]:
         raise HTTPException(status_code=415, detail=f"File type of {input_image.content_type} is not valid")
 
+    # * Get the file size
+    file_size = size_upload_files(input_image)
+
+    # * Raise HTTP Exception in case the file is too large
+    if file_size > 5 * MB_IN_BYTES:
+        raise HTTPException(status_code=HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File too large")
+
     # * Create the prompt for creating the image
-    prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
+    prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
     # * Create the negative prompt for avoiding certain concepts in the photo
     negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
     # * Access the file object and get its contents
@@ -305,9 +320,10 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
 @app.post("/inpaint", tags=["inpaint"])
 def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
-            style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")], 
-            environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")],
-            region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
+            style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
+            environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
+            weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
+            disability : Annotated[str , Query(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
             input_image : Annotated[UploadFile , File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")], 
             mask_image : Annotated[UploadFile , File(title="Image mask of the input image", description="This image should be in black and white, and the white parts should be the parts you want to change and the black parts the ones you want to mantain")], 
             steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
@@ -323,8 +339,15 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
     if mask_image.content_type not in ["image/jpeg", "image/png"]:
         raise HTTPException(status_code=415, detail=f"File type of {mask_image.content_type} is not valid")
     
+    # * Get the file size
+    file_size = size_upload_files(input_image)
+
+    # * Raise HTTP Exception in case the file is too large
+    if file_size > 5 * MB_IN_BYTES:
+        raise HTTPException(status_code=HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File too large")
+    
     # * Create the prompt for creating the image
-    prompt = create_prompt(budget=budget, style=style, environment=environment, region_weather=region_weather)
+    prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
     # * Create the negative prompt for avoiding certain concepts in the photo
     negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
     # * Access the file object of the input image and get its contents
@@ -351,16 +374,21 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
 @app.post("/image_variation")
-def image_variation(prompt : Annotated[str , Query(title="Prompt for creating images", description="Text to Image Diffusers usually benefit from a more descriptive prompt, try writing detailed things")],
-            input_image : Annotated[UploadFile , Body(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")],  
-            steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
-            guidance_scale : Annotated[float , Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
-            num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2, 
-            api_key: str = Security(get_api_key),):
+def image_variation(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
+                    style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
+                    environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
+                    weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
+                    disability : Annotated[str , Query(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
+                    input_image : Annotated[UploadFile , Body(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")],  
+                    steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
+                    guidance_scale : Annotated[float , Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
+                    num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2, 
+                    api_key: str = Security(get_api_key),):
     
     """Image variation route request that performs a CLIP process in the input image, that outputs a description of an image that afterwards is used as the prompt to create similar images"""
 
     # * Create the images using the given prompt and some other parameters
+    prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
     images = image_variation_model(prompt=prompt, num_inference_steps=steps, guidance_scale=guidance_scale, image=input_image, num_images_per_prompt=num_images).images
     # * Encode the images in base64 and save them to a JSON file
     jsonImages = images_to_b64(images)

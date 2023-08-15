@@ -10,7 +10,8 @@ class Txt2ImgParamas(BaseModel):
     budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")]
     style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")]
     environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")]
-    region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")]
+    weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")]
+    disability : Annotated[str , Query(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")]
     steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20 
     guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 7 
     num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2
@@ -18,8 +19,9 @@ class Txt2ImgParamas(BaseModel):
 class Img2ImgParams(BaseModel):
     budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")]
     style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")]
-    environment : Annotated[str , Query(title="Enviroment of the re-design", description="The enviorment you are looking to re-design")]
-    region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")]
+    environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")]
+    weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")]
+    disability : Annotated[str , Query(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")]
     input_image : Annotated[UploadFile, File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")] 
     steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20 
     guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5 
@@ -29,7 +31,8 @@ class InpaintParams(BaseModel):
     budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")]
     style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")]
     environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")]
-    region_weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")]
+    weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")]
+    disability : Annotated[str , Query(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")]
     input_image : Annotated[UploadFile , File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")]
     mask_image : Annotated[UploadFile , File(title="Image mask of the input image", description="This image should be in black and white, and the white parts should be the parts you want to change and the black parts the ones you want to maintain")]
     steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20
