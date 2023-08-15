@@ -45,8 +45,6 @@ async def get_api_key(
         HTTPException: If the API key is invalid or missing.
     """
 
-
-
     if (api_key_query == None and api_key_header == None and api_key_cookie == None):
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED,

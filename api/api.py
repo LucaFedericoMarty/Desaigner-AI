@@ -32,7 +32,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 
 from starlette_validation_uploadfile import ValidateUploadFileMiddleware
-from starlette.status import HTTP_413_REQUEST_ENTITY_TOO_LARGE
+from starlette.status import HTTP_413_REQUEST_ENTITY_TOO_LARGE, HTTP_415_UNSUPPORTED_MEDIA_TYPE
 
 from fastapi.security.api_key import APIKey
 from api.auth.auth import get_api_key 
@@ -46,6 +46,11 @@ MB_IN_BYTES = 1048576
 # http://127.0.0.1:8000
 
 tags_metadata = [
+    {
+        "name": "test",
+        "description": "Operations for testing security and API availability",
+    },
+
     {
         "name": "text2image",
         "description": "Creating a new image from user preferences, without an image",
@@ -110,14 +115,14 @@ app.add_middleware(
 txt2img_model, img2img_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.0_noVAE", inpaint_model_id = "https://huggingface.co/SG161222/Realistic_Vision_V5.1_noVAE/blob/main/Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors")
 mlsd_detector =  load_mlsd_detector(model_id='lllyasviel/ControlNet')#revision="fp16", #torch_dtype=torch.float16)
 
-@app.get("/")
+@app.get("/", tags=["test"])
 def test_api():
     """Root route request to test API operation"""
     return {"welcome_message" : "Welcome to my REST API"}
 
 
 # * Lockedown Route
-@app.get("/secure")
+@app.get("/secure", tags=["test"])
 async def info(api_key: APIKey = Security(get_api_key)):
     """A private endpoint that requires a valid API key to be provided."""
     return {
@@ -125,7 +130,7 @@ async def info(api_key: APIKey = Security(get_api_key)):
     }
 
 # * Open Route
-@app.get("/open")
+@app.get("/open", tags=["test"])
 async def info():
     """An open endpoint that does not require authentication"""
     return {
@@ -284,7 +289,7 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
     """Image-to-image route request that performs a image-to-image process using a pre-trained Stable Diffusion Model"""
 
     if input_image.content_type not in ["image/jpeg", "image/png"]:
-        raise HTTPException(status_code=415, detail=f"File type of {input_image.content_type} is not valid")
+        raise HTTPException(status_code=HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=f"File type of {input_image.content_type} is not valid")
 
     # * Get the file size
     file_size = size_upload_files(input_image)
@@ -334,10 +339,10 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
     """Inpainting route request that performs a text-to-image process in the mask of the image using a pre-trained Stable Diffusion Model"""
 
     if input_image.content_type not in ["image/jpeg", "image/png"]:
-        raise HTTPException(status_code=415, detail=f"File type of {input_image.content_type} is not valid")
+        raise HTTPException(status_code=HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=f"File type of {input_image.content_type} is not valid")
     
     if mask_image.content_type not in ["image/jpeg", "image/png"]:
-        raise HTTPException(status_code=415, detail=f"File type of {mask_image.content_type} is not valid")
+        raise HTTPException(status_code=HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=f"File type of {mask_image.content_type} is not valid")
     
     # * Get the file size
     file_size = size_upload_files(input_image)
