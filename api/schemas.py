@@ -6,6 +6,8 @@ from typing import Annotated, List, Dict
 
 from api.auth.auth import get_api_key
 
+IMAGES_B64 = List[str]
+
 class Txt2ImgParamas(BaseModel):
     budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")]
     style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")]
@@ -40,4 +42,4 @@ class InpaintParams(BaseModel):
     num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2
 
 class ImageResponse(BaseModel):
-    images: List[str] = Field(..., description="List of images in base64 format")
+    images: IMAGES_B64 = Field(..., description="List of images in base64 format")
