@@ -29,6 +29,10 @@ from email.mime.image import MIMEImage
 
 models = DiffusionPipeline, StableDiffusionControlNetPipeline, StableDiffusionInpaintPipeline
 
+def lowercase_first_letter(word : str) -> str:
+  """Lowercase the first letter of a word"""
+  return word[0].lower() + word[1:]
+
 def weight_keyword(keyword : str, weight : float) -> str:
     """Weight each keyword by the given weight"""
 
@@ -38,10 +42,8 @@ def weight_keyword(keyword : str, weight : float) -> str:
 def create_prompt(budget : str, style : str , environment : str, weather : str, disability : str = "") -> str:
   """Creat an adequate prompt with each keyword weighted"""
 
-  if disability == "":
-    prompt = normal_prompt
-  else:
-    prompt = disability_prompt
+  if len(disability) > 0:
+    disability = lowercase_first_letter(disability)
 
   # * Create all the keywords or key phrases to weight
   budget += " budget"
@@ -51,14 +53,17 @@ def create_prompt(budget : str, style : str , environment : str, weather : str, 
   style_w = weight_keyword(style, 1.7)
   weather += " weather"
   weather_w = weight_keyword(weather, 0.4)
-  disability = f'adapted and usable for {disability}'
-  disability_w = weight_keyword(disability, 0.5)
+  disability_new = f'adapted and usable for {disability}'
+  disability_w = weight_keyword(disability_new, 0.5)
 
   # * Create the prompt with additional details to improve its performance
-
   normal_prompt = f"RAW photo, masterpiece, interior design, {environment_w}, {style_w}, {weather_w}, {budget_w}, ultra realistic render, 3D art, daylight, hyperrealistic, photorealistic, ultradetailed, 8k, soft lighting, high quality, film grain, Fujifilm XT3"
-
   disability_prompt = f"RAW photo, masterpiece, interior design, {environment_w}, {style_w}, {weather_w}, {budget_w}, {disability_w}, ultra realistic render, 3D art, daylight, hyperrealistic, photorealistic, ultradetailed, 8k, soft lighting, high quality, film grain, Fujifilm XT3"
+
+  if not disability:
+    prompt = normal_prompt
+  else:
+    prompt = disability_prompt
 
   return prompt
 

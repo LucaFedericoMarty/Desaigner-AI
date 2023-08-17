@@ -156,8 +156,6 @@ def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     # * Create the prompt for creating the image
     prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
-    # * Create the negative prompt for avoiding certain concepts in the photo
-    negative_prompt = ("blurry : 1.3, abstract : 1.4, cartoon : 1.4, animated : 1.5, unrealistic : 1.6, watermark : 1.2, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed, image on TV : 1.5, TV turned on : 1.4")
     # * Intiliaze the list of file objects --> Direction in memory of files
     file_objects = []
     # * Create the images using the given prompt and some other parameters
@@ -186,8 +184,6 @@ def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", 
 
     # * Create the prompt for creating the image
     prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather)
-    # * Create the negative prompt for avoiding certain concepts in the photo
-    negative_prompt = ("blurry, abstract : 1.3, cartoon : 1.3, animated : 1.5, unrealistic : 1.6, watermark, signature, two faces, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, cropped image, overexposed, underexposed, (image on TV : 1.5), (TV turned on : 1.4)")
     # * Create the images using the given prompt and some other parameters
     images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     # * Encode the images in base64 and save them to a JSON file
@@ -234,8 +230,6 @@ def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design",
 
     # * Create the prompt for creating the image
     prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
-    # * Create the negative prompt for avoiding certain concepts in the photo
-    negative_prompt = ("blurry, abstract : 1.3, cartoon : 1.3, animated : 1.5, unrealistic : 1.6, watermark, signature, two faces, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, cropped image, overexposed, underexposed, (image on TV : 1.5), (TV turned on : 1.4)")
     # * Create the images using the given prompt and some other parameters
     images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     # * Images to list of bytes
@@ -264,8 +258,6 @@ def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design",
 
     # * Create the prompt for creating the image
     prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
-    # * Create the negative prompt for avoiding certain concepts in the photo
-    negative_prompt = negative_prompt = ("blurry, abstract : 1.3, cartoon : 1.3, animated : 1.5, unrealistic : 1.6, watermark, signature, two faces, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, cropped image, overexposed, underexposed, (image on TV : 1.5), (TV turned on : 1.4)")
     # * Create the images using the given prompt and some other parameters
     images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     # * Images to list of bytes
@@ -301,8 +293,6 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     # * Create the prompt for creating the image
     prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
-    # * Create the negative prompt for avoiding certain concepts in the photo
-    negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
     # * Move the cursor to the beginning of the file
     input_image.file.seek(0)
     # * Access the file object and get its contents
@@ -356,8 +346,6 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
     
     # * Create the prompt for creating the image
     prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
-    # * Create the negative prompt for avoiding certain concepts in the photo
-    negative_prompt = ("blurry, abstract, cartoon, animated, unrealistic, watermark, signature, two faces, black man, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, hero, cropped image, overexposed, underexposed")
     # * Access the file object of the input image and get its contents
     input_image_file_object_content = input_image.file.read()
     # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
