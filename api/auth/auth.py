@@ -45,20 +45,26 @@ async def get_api_key(
         HTTPException: If the API key is invalid or missing.
     """
 
-    if (api_key_query == None and api_key_header == None and api_key_cookie == None):
+    api_key_valid_methods = []
+
+    api_key_methods = [api_key_query, api_key_header, api_key_cookie]
+
+    for api_key_method in api_key_methods:
+        if api_key_method != None:
+            print("Hola")
+            api_key_valid_methods.append(api_key_method) 
+
+    if len(api_key_valid_methods) == 0:
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED,
             detail="Missing API Key",
         )
     
-    if api_key_query in API_KEYS:
-        return api_key_query
-    elif api_key_header in API_KEYS:
-        return api_key_header
-    elif api_key_cookie in API_KEYS:
-        return api_key_cookie
-    else:
-        raise HTTPException(
-        status_code=HTTP_401_UNAUTHORIZED,
-        detail="Invalid API Key",
+    for api_key_valid_method in api_key_valid_methods:
+        if api_key_valid_method in API_KEYS:
+                return api_key_valid_method
+    
+    raise HTTPException(
+    status_code=HTTP_401_UNAUTHORIZED,
+    detail="Invalid API Key",
     )
