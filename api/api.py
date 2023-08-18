@@ -25,7 +25,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, Annotated
 
 from email.mime.multipart import MIMEMultipart
@@ -112,7 +112,7 @@ app.add_middleware(
 
 """
 
-txt2img_model, img2img_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.0_noVAE", inpaint_model_id = "https://huggingface.co/SG161222/Realistic_Vision_V5.1_noVAE/blob/main/Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors")
+txt2img_model, img2img_model, inpaint_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.0_noVAE", inpaint_model_id = "../Models/Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors")
 mlsd_detector =  load_mlsd_detector(model_id='lllyasviel/ControlNet')#revision="fp16", #torch_dtype=torch.float16)
 
 # * Create the negative prompt for avoiding certain concepts in the photo
@@ -316,7 +316,7 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
-@app.post("/inpaint", tags=["inpaint"])
+@app.post("/inpaint/v1", tags=["inpaint"])
 def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
             environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
@@ -346,10 +346,14 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
     
     # * Create the prompt for creating the image
     prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
+    # * Move the cursor to the beginning of the file
+    input_image.file.seek(0)
     # * Access the file object of the input image and get its contents
     input_image_file_object_content = input_image.file.read()
     # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
     input_img = Image.open(BytesIO(input_image_file_object_content))
+    # * Move the cursor to the beginning of the file
+    mask_image.file.seek(0)
     # * Access the file object of the maske image and get its contents
     mask_image_file_object_content = mask_image.file.read()
     # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
@@ -368,6 +372,50 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
     headers = {"Content-Disposition": f"attachment; filename={filename}"}
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
+
+@app.post("/inpaint/v2", response_model=ImageResponse ,tags=["inpaint"])
+def inpaint(params : InpaintParams,
+            input_image : UploadFile = File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image"),
+            mask_image : UploadFile = File(title="Image mask of the input image", description="This image should be in black and white, and the white parts should be the parts you want to change and the black parts the ones you want to maintain"),
+            api_key: str = Security(get_api_key),):
+
+    """Inpainting route request that performs a text-to-image process in the mask of the image using a pre-trained Stable Diffusion Model"""
+
+    if input_image.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=f"File type of {input_image.content_type} is not valid")
+    
+    if mask_image.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=f"File type of {mask_image.content_type} is not valid")
+    
+    # * Get the file size
+    file_size = size_upload_files(input_image)
+
+    # * Raise HTTP Exception in case the file is too large
+    if file_size > 5 * MB_IN_BYTES:
+        raise HTTPException(status_code=HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File too large")
+    
+    # * Create the prompt for creating the image
+    prompt = create_prompt(budget=params.budget, style=params.style, environment=params.environment, weather=params.weather, disability=params.disability)
+    # * Move the cursor to the beginning of the file
+    input_image.file.seek(0)
+    # * Access the file object of the input image and get its contents
+    input_image_file_object_content = input_image.file.read()
+    # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
+    input_img = Image.open(BytesIO(input_image_file_object_content))
+    # * Move the cursor to the beginning of the file
+    mask_image.file.seek(0)
+    # * Access the file object of the maske image and get its contents
+    mask_image_file_object_content = mask_image.file.read()
+    # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
+    mask_img = Image.open(BytesIO(mask_image_file_object_content))
+    # * Create the images using the given prompt and some other parameters
+    images = inpaint_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=params.steps, guidance_scale=params.guidance_scale, image=input_img, mask_image=mask_img, num_images_per_prompt=params.num_images).images
+    # * Encode the images in base64 and save them to a JSON file
+    b64Images = images_to_b64_v2(images)
+    # * Create an image grid
+    grid = image_grid(images)
+
+    return ImageResponse(b64Images)
 
 @app.post("/image_variation")
 def image_variation(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
