@@ -18,7 +18,7 @@ from accelerate import PartialState
 import time
 from datetime import datetime, timedelta
 
-from fastapi import FastAPI, Response, Request, HTTPException, status, UploadFile, Query, Body, File, Depends, Security
+from fastapi import FastAPI, Response, Request, HTTPException, status, UploadFile, Query, Body, File, Depends, Security, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
@@ -267,7 +267,7 @@ def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design",
 
     return StreamingResponse(iter(multipart_data), media_type="multipart/related")
 
-@app.post("/img2img", tags=["image2image"])
+@app.post("/img2img/v1", tags=["image2image"])
 def img2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
             environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
@@ -315,6 +315,42 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
     headers = {"Content-Disposition": f"attachment; filename={filename}"}
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
+
+@app.post("/img2img/v2", response_model= ImageResponse, tags=["image2image"])
+def img2img(params: Img2ImgParams = Depends(),
+            input_image : UploadFile = File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image"),
+            api_key: str = Security(get_api_key),):
+    
+    """Image-to-image route request that performs a image-to-image process using a pre-trained Stable Diffusion Model"""
+
+    if input_image.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=f"File type of {input_image.content_type} is not valid")
+
+    # * Get the file size
+    file_size = size_upload_files(input_image)
+
+    # * Raise HTTP Exception in case the file is too large
+    if file_size > 5 * MB_IN_BYTES:
+        raise HTTPException(status_code=HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File too large")
+
+    # * Create the prompt for creating the image
+    prompt = create_prompt(budget=params.budget, style=params.style, environment=params.environment, weather=params.weather, disability=params.disability)
+    # * Move the cursor to the beginning of the file
+    input_image.file.seek(0)
+    # * Access the file object and get its contents
+    input_image_file_object_content = input_image.file.read()
+    # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
+    input_img = Image.open(BytesIO(input_image_file_object_content))
+    # * Convert the image to mlsd line detector format
+    input_image_final = mlsd_detector(input_img)
+    # * Create the images using the given prompt and some other parameters
+    images = img2img_model(prompt=prompt, negative_prompt=negative_prompt, image=input_image_final, controlnet_conditioning_scale = params.controlnet_conditioning_scale, num_inference_steps=params.steps, guidance_scale=params.guidance_scale, num_images_per_prompt=params.num_images).images
+    # * Encode the images in base64 and save them to a JSON file
+    b64Images = images_to_b64_v2(images)
+    # * Create an image grid
+    grid = image_grid(images)
+
+    return ImageResponse(images=b64Images)
 
 @app.post("/inpaint/v1", tags=["inpaint"])
 def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
@@ -374,7 +410,7 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
 @app.post("/inpaint/v2", response_model=ImageResponse ,tags=["inpaint"])
-def inpaint(params : InpaintParams,
+def inpaint(params : InpaintParams = Depends(),
             input_image : UploadFile = File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image"),
             mask_image : UploadFile = File(title="Image mask of the input image", description="This image should be in black and white, and the white parts should be the parts you want to change and the black parts the ones you want to maintain"),
             api_key: str = Security(get_api_key),):
@@ -415,7 +451,7 @@ def inpaint(params : InpaintParams,
     # * Create an image grid
     grid = image_grid(images)
 
-    return ImageResponse(b64Images)
+    return ImageResponse(images=b64Images)
 
 @app.post("/image_variation")
 def image_variation(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
