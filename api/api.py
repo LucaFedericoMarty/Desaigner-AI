@@ -200,9 +200,7 @@ def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
 @app.post("/txt2img/v2/v1", response_model=ImageResponse, tags=["text2image"])
-def txt2imgclass(params: Txt2ImgParamas, 
-                 #api_key: APIKey = Security(get_api_key)
-                 ):
+def txt2imgclass(params: Txt2ImgParamas, api_key: APIKey = Security(get_api_key)):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
@@ -321,7 +319,7 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
 @app.post("/img2img/v2", response_model= ImageResponse, tags=["image2image"])
 def img2img(params: Img2ImgParams = Depends(),
             input_image : UploadFile = File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image"),
-            #api_key: str = Security(get_api_key),
+            api_key: str = Security(get_api_key),
             ):
     
     """Image-to-image route request that performs a image-to-image process using a pre-trained Stable Diffusion Model"""

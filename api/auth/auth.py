@@ -19,7 +19,7 @@ load_dotenv(dotenv_path)
 # * Load the list of API KEYS
 API_KEYS = os.getenv(key='API_KEYS')
 
-API_KEY_NAME = 'accces-token-api-key'
+API_KEY_NAME = 'access-token-api-key'
 
 # * Create instances of api key methods
 api_key_query = APIKeyQuery(name=API_KEY_NAME, auto_error=False)
@@ -51,7 +51,6 @@ async def get_api_key(
 
     for api_key_method in api_key_methods:
         if api_key_method != None:
-            print("Hola")
             api_key_valid_methods.append(api_key_method) 
 
     if len(api_key_valid_methods) == 0:
