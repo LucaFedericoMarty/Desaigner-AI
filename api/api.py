@@ -39,7 +39,7 @@ from api.auth.auth import get_api_key
 
 from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, images_to_mime2, size_upload_files, models  
 
-from api.schemas import Txt2ImgParamas, Img2ImgParams, InpaintParams, ImageResponse
+from api.schemas import Txt2ImgParams, Img2ImgParams, InpaintParams, ImageResponse
 
 MB_IN_BYTES = 1048576
 
@@ -200,7 +200,9 @@ def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
 @app.post("/txt2img/v2/v1", response_model=ImageResponse, tags=["text2image"])
-def txt2imgclass(params: Txt2ImgParamas, api_key: APIKey = Security(get_api_key)):
+def txt2imgclass(params: Txt2ImgParams, 
+                 #api_key: APIKey = Security(get_api_key)
+                 ):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 

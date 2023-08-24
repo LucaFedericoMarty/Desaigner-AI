@@ -8,7 +8,7 @@ from api.auth.auth import get_api_key
 
 IMAGES_B64 = List[str]
 
-class Txt2ImgParamas(BaseModel):
+class Txt2ImgParams(BaseModel):
     """Pydantic model for Text2Image operations
     
     It has all the necessary parameters for performing a Text2Image request. The attributes are the following:
@@ -30,7 +30,7 @@ class Txt2ImgParamas(BaseModel):
     disability : str = Field(None, title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty", examples=["Blindness", "Deaf"])
     steps : int = Field(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference",default=20, ge=15, le=50)
     guidance_scale : float = Field(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", default=7, ge=3.5 , le=7.5) 
-    num_images : int = Field(title="Number of images to create", description="The higher the number, the more time required to create the images" , default=2, ge=2, le=6)
+    num_images : int = Field(title="Number of images to create", description="The higher the number, the more time required to create the images" , default=2, ge=1, le=4)
 
 class Img2ImgParams(BaseModel):
     """Pydantic model for Image2Image operations
