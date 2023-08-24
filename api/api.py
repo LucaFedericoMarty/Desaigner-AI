@@ -35,7 +35,7 @@ from starlette_validation_uploadfile import ValidateUploadFileMiddleware
 from starlette.status import HTTP_413_REQUEST_ENTITY_TOO_LARGE, HTTP_415_UNSUPPORTED_MEDIA_TYPE
 
 from fastapi.security.api_key import APIKey
-from api.auth.auth import get_api_key 
+from api.auth.auth import get_api_key, get_api_key_header
 
 from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, images_to_mime2, size_upload_files, models  
 
@@ -86,14 +86,15 @@ async def add_process_time_header(request: Request, call_next):
     
 # * Origings for CORS requests    
     
-origins = ["http://localhost:8000", "http://localhost:3000", "http://localhost:3000/create"]
+origins = ["http://localhost:3000", "http://localhost:3000/", "http://localhost:3000/create"]
 
 # * Adding CORS Class to the Middleware
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_methods=["*"], 
+    allow_methods=["*"],
+    allow_headers=["*"], 
     allow_credentials=True)
 
 # TODO: Check if use this middleware instead of manually creating HTTP Exceptions
@@ -200,9 +201,7 @@ def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
 @app.post("/txt2img/v2/v1", response_model=ImageResponse, tags=["text2image"])
-def txt2imgclass(params: Txt2ImgParams, 
-                 #api_key: APIKey = Security(get_api_key)
-                 ):
+def txt2imgclass(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key)):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 

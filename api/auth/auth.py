@@ -19,14 +19,14 @@ load_dotenv(dotenv_path)
 # * Load the list of API KEYS
 API_KEYS = os.getenv(key='API_KEYS')
 
-API_KEY_NAME = 'access-token-api-key'
+API_KEY_NAME = 'x-api-key'
 
 # * Create instances of api key methods
 api_key_query = APIKeyQuery(name=API_KEY_NAME, auto_error=False)
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 api_key_cookie = APIKeyCookie(name=API_KEY_NAME, auto_error=False)
 
-async def get_api_key(
+def get_api_key(
     api_key_query: str = Security(api_key_query),
     api_key_header: str = Security(api_key_header),
     api_key_cookie: str = Security(api_key_cookie),) -> str:
@@ -67,3 +67,17 @@ async def get_api_key(
     status_code=HTTP_401_UNAUTHORIZED,
     detail="Invalid API Key",
     )
+
+def get_api_key_header(api_key_header: str = Security(api_key_header)):
+    if api_key_header == None:
+        raise HTTPException(
+        status_code=HTTP_401_UNAUTHORIZED,
+        detail="Missing API Key",
+    )
+    elif api_key_header in API_KEYS:
+        return api_key_header
+    else:    
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED,
+            detail="Invalid API Key",
+        )
