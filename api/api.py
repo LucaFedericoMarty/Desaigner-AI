@@ -35,7 +35,7 @@ from starlette_validation_uploadfile import ValidateUploadFileMiddleware
 from starlette.status import HTTP_413_REQUEST_ENTITY_TOO_LARGE, HTTP_415_UNSUPPORTED_MEDIA_TYPE
 
 from fastapi.security.api_key import APIKey
-from api.auth.auth import get_api_key, get_api_key_header
+from api.auth.auth import get_api_key
 
 from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, images_to_mime2, size_upload_files, models  
 
