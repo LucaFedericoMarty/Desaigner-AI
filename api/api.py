@@ -113,7 +113,7 @@ app.add_middleware(
 
 """
 
-txt2img_model, img2img_model, inpaint_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.0_noVAE", inpaint_model_id = r"../Models/Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors")
+txt2img_model, img2img_model, inpaint_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.0_noVAE", inpaint_model_id = r"./Models/Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors")
 mlsd_detector =  load_mlsd_detector(model_id='lllyasviel/ControlNet')#revision="fp16", #torch_dtype=torch.float16)
 
 # * Create the negative prompt for avoiding certain concepts in the photo
@@ -320,7 +320,7 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
 @app.post("/img2img/v2", response_model= ImageResponse, tags=["image2image"])
 def img2img(params: Img2ImgParams = Depends(),
             input_image : UploadFile = File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image"),
-            api_key: str = Security(get_api_key),
+            api_key: APIKey = Security(get_api_key),
             ):
     
     """Image-to-image route request that performs a image-to-image process using a pre-trained Stable Diffusion Model"""
@@ -365,7 +365,7 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
             steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
             guidance_scale : Annotated[float , Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
             num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2, 
-            api_key: str = Security(get_api_key),):
+            api_key: APIKey = Security(get_api_key),):
 
     """Inpainting route request that performs a text-to-image process in the mask of the image using a pre-trained Stable Diffusion Model"""
 
@@ -415,7 +415,7 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
 def inpaint(params : InpaintParams = Depends(),
             input_image : UploadFile = File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image"),
             mask_image : UploadFile = File(title="Image mask of the input image", description="This image should be in black and white, and the white parts should be the parts you want to change and the black parts the ones you want to maintain"),
-            api_key: str = Security(get_api_key),):
+            api_key: APIKey = Security(get_api_key),):
 
     """Inpainting route request that performs a text-to-image process in the mask of the image using a pre-trained Stable Diffusion Model"""
 

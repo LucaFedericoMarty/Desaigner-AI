@@ -67,17 +67,3 @@ def get_api_key(
     status_code=HTTP_401_UNAUTHORIZED,
     detail="Invalid API Key",
     )
-
-def get_api_key_header(api_key_header: str = Security(api_key_header)):
-    if api_key_header == None:
-        raise HTTPException(
-        status_code=HTTP_401_UNAUTHORIZED,
-        detail="Missing API Key",
-    )
-    elif api_key_header in API_KEYS:
-        return api_key_header
-    else:    
-        raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED,
-            detail="Invalid API Key",
-        )
