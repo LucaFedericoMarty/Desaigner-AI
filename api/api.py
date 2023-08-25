@@ -65,6 +65,16 @@ tags_metadata = [
         "name": "inpaint",
         "description": "Creating a similar image from user preferences and selected parts of user's photo",
     },
+
+    {
+        "name": "old",
+        "description": "Old and deprecated endpoints",
+    },
+
+    {
+        "name": "working",
+        "description": "Currently used and active endpoints",
+    },
 ]
 
 app = FastAPI(
@@ -149,7 +159,7 @@ async def upload(image_file: UploadFile = File(title="Image file to test uploadi
     }
 
 
-@app.post("/txt2img/v1/v1", tags=["text2image"])
+@app.post("/txt2img/v1/v1", tags=["text2image", "old"])
 def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
             environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
@@ -177,7 +187,7 @@ def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
     # * Return the zip file with the name 'images.zip' and specify its media type
     return FileResponse(zip_filename, filename='images.zip', media_type='application/zip')
 
-@app.post("/txt2img/v1/v2", tags=["text2image"])
+@app.post("/txt2img/v1/v2", tags=["text2image", "old"])
 def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
                 environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
@@ -207,7 +217,7 @@ def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", 
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
-@app.post("/txt2img/v2/v1", response_model=ImageResponse, tags=["text2image"])
+@app.post("/txt2img/v2/v1", response_model=ImageResponse, tags=["text2image", "working"])
 def txt2imgclass(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key)):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
@@ -223,7 +233,7 @@ def txt2imgclass(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key))
 
     return ImageResponse(images=b64Images)
 
-@app.post("/txt2img/v1/v3", tags=["text2image"])
+@app.post("/txt2img/v1/v3", tags=["text2image", "old"])
 def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
                 environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
@@ -251,7 +261,7 @@ def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design",
 
     return imagesBytesFinal
 
-@app.post("/txt2img/v1/v4", tags=["text2image"])
+@app.post("/txt2img/v1/v4", tags=["text2image", "old"])
 def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
                 environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
@@ -275,7 +285,7 @@ def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design",
 
     return StreamingResponse(iter(multipart_data), media_type="multipart/related")
 
-@app.post("/img2img/v1", tags=["image2image"])
+@app.post("/img2img/v1", tags=["image2image", "old"])
 def img2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
             environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
@@ -324,7 +334,7 @@ def img2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
-@app.post("/img2img/v2", response_model= ImageResponse, tags=["image2image"])
+@app.post("/img2img/v2", response_model= ImageResponse, tags=["image2image", "old"])
 def img2img(params: Img2ImgParams = Depends(),
             input_image : UploadFile = File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image"),
             api_key: APIKey = Security(get_api_key),
@@ -361,7 +371,7 @@ def img2img(params: Img2ImgParams = Depends(),
 
     return ImageResponse(images=b64Images)
 
-@app.post("/img2img/v3", tags=["image2image"])
+@app.post("/img2img/v3", tags=["image2image", "working"])
 def img2img(budget : Annotated[str , Form(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Form(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
             environment : Annotated[str , Form(title="Environment of the re-design", description="The environment you are looking to re-design")],
@@ -404,7 +414,7 @@ def img2img(budget : Annotated[str , Form(title="Budget of the re-design", descr
 
     return ImageResponse(images=b64Images)
 
-@app.post("/inpaint/v1", tags=["inpaint"])
+@app.post("/inpaint/v1", tags=["inpaint", "old"])
 def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
             environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
@@ -461,7 +471,7 @@ def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", desc
 
     return JSONResponse(content=jsonCompatibleImages, headers=headers)
 
-@app.post("/inpaint/v2", response_model=ImageResponse ,tags=["inpaint"])
+@app.post("/inpaint/v2", response_model=ImageResponse ,tags=["inpaint", "old"])
 def inpaint(params : InpaintParams = Depends(),
             input_image : UploadFile = File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image"),
             mask_image : UploadFile = File(title="Image mask of the input image", description="This image should be in black and white, and the white parts should be the parts you want to change and the black parts the ones you want to maintain"),
@@ -498,6 +508,57 @@ def inpaint(params : InpaintParams = Depends(),
     mask_img = Image.open(BytesIO(mask_image_file_object_content))
     # * Create the images using the given prompt and some other parameters
     images = inpaint_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=params.steps, guidance_scale=params.guidance_scale, image=input_img, mask_image=mask_img, num_images_per_prompt=params.num_images).images
+    # * Encode the images in base64 and save them to a JSON file
+    b64Images = images_to_b64_v2(images)
+    # * Create an image grid
+    grid = image_grid(images)
+
+    return ImageResponse(images=b64Images)
+
+@app.post("/inpaint/v3", tags=["inpaint", "working"])
+def inpaint(budget : Annotated[str , Form(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
+            style : Annotated[str , Form(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
+            environment : Annotated[str , Form(title="Environment of the re-design", description="The environment you are looking to re-design")],
+            weather : Annotated[str , Form(title="Weather of the region", description="The typical weather you of the region you are living")],
+            disability : Annotated[str , Form(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
+            input_image : Annotated[UploadFile , File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")], 
+            mask_image : Annotated[UploadFile , File(title="Image mask of the input image", description="This image should be in black and white, and the white parts should be the parts you want to change and the black parts the ones you want to mantain")], 
+            steps : Annotated[int , Form(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
+            guidance_scale : Annotated[float , Form(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 4.5, 
+            num_images : Annotated[int , Form(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2, 
+            api_key: APIKey = Security(get_api_key),):
+
+    """Inpainting route request that performs a text-to-image process in the mask of the image using a pre-trained Stable Diffusion Model"""
+
+    if input_image.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=f"File type of {input_image.content_type} is not valid")
+    
+    if mask_image.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=f"File type of {mask_image.content_type} is not valid")
+    
+    # * Get the file size
+    file_size = size_upload_files(input_image)
+
+    # * Raise HTTP Exception in case the file is too large
+    if file_size > 5 * MB_IN_BYTES:
+        raise HTTPException(status_code=HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File too large")
+    
+    # * Create the prompt for creating the image
+    prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
+    # * Move the cursor to the beginning of the file
+    input_image.file.seek(0)
+    # * Access the file object of the input image and get its contents
+    input_image_file_object_content = input_image.file.read()
+    # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
+    input_img = Image.open(BytesIO(input_image_file_object_content))
+    # * Move the cursor to the beginning of the file
+    mask_image.file.seek(0)
+    # * Access the file object of the maske image and get its contents
+    mask_image_file_object_content = mask_image.file.read()
+    # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
+    mask_img = Image.open(BytesIO(mask_image_file_object_content))
+    # * Create the images using the given prompt and some other parameters
+    images = inpaint_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, image=input_img, mask_image=mask_img, num_images_per_prompt=num_images).images
     # * Encode the images in base64 and save them to a JSON file
     b64Images = images_to_b64_v2(images)
     # * Create an image grid
