@@ -141,6 +141,13 @@ async def info():
         "default variable": "Open Route"
     }
 
+@app.post("/upload-image", tags=["test"])
+async def upload(image_file: UploadFile = File(title="Image file to test uploading"),api_key: APIKey = Security(get_api_key)):
+    """A private endpoint to test uploading images."""
+    return {
+        "Image file": image_file
+    }
+
 
 @app.post("/txt2img/v1/v1", tags=["text2image"])
 def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
