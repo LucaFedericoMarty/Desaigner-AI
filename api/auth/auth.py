@@ -19,14 +19,14 @@ load_dotenv(dotenv_path)
 # * Load the list of API KEYS
 API_KEYS = os.getenv(key='API_KEYS')
 
-API_KEY_NAME = 'accces-token-api-key'
+API_KEY_NAME = 'x-api-key'
 
 # * Create instances of api key methods
 api_key_query = APIKeyQuery(name=API_KEY_NAME, auto_error=False)
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 api_key_cookie = APIKeyCookie(name=API_KEY_NAME, auto_error=False)
 
-async def get_api_key(
+def get_api_key(
     api_key_query: str = Security(api_key_query),
     api_key_header: str = Security(api_key_header),
     api_key_cookie: str = Security(api_key_cookie),) -> str:
@@ -45,22 +45,25 @@ async def get_api_key(
         HTTPException: If the API key is invalid or missing.
     """
 
+    api_key_valid_methods = []
 
+    api_key_methods = [api_key_query, api_key_header, api_key_cookie]
 
-    if (api_key_query == None and api_key_header == None and api_key_cookie == None):
+    for api_key_method in api_key_methods:
+        if api_key_method != None:
+            api_key_valid_methods.append(api_key_method) 
+
+    if len(api_key_valid_methods) == 0:
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED,
             detail="Missing API Key",
         )
     
-    if api_key_query in API_KEYS:
-        return api_key_query
-    elif api_key_header in API_KEYS:
-        return api_key_header
-    elif api_key_cookie in API_KEYS:
-        return api_key_cookie
-    else:
-        raise HTTPException(
-        status_code=HTTP_401_UNAUTHORIZED,
-        detail="Invalid API Key",
+    for api_key_valid_method in api_key_valid_methods:
+        if api_key_valid_method in API_KEYS:
+                return api_key_valid_method
+    
+    raise HTTPException(
+    status_code=HTTP_401_UNAUTHORIZED,
+    detail="Invalid API Key",
     )

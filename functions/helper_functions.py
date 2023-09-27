@@ -29,14 +29,21 @@ from email.mime.image import MIMEImage
 
 models = DiffusionPipeline, StableDiffusionControlNetPipeline, StableDiffusionInpaintPipeline
 
+def lowercase_first_letter(word : str) -> str:
+  """Lowercase the first letter of a word"""
+  return word[0].lower() + word[1:]
+
 def weight_keyword(keyword : str, weight : float) -> str:
     """Weight each keyword by the given weight"""
 
     # * Weight the keyword by the given weight in a string format
     return (f'({keyword} : {weight})')
 
-def create_prompt(budget : str, style : str , environment : str, region_weather : str) -> str:
+def create_prompt(budget : str, style : str , environment : str, weather : str, disability : str = "") -> str:
   """Creat an adequate prompt with each keyword weighted"""
+
+  if len(disability) > 0:
+    disability = lowercase_first_letter(disability)
 
   # * Create all the keywords or key phrases to weight
   budget += " budget"
@@ -44,11 +51,21 @@ def create_prompt(budget : str, style : str , environment : str, region_weather 
   environment_w = weight_keyword(environment, 1.2)
   style += " style"
   style_w = weight_keyword(style, 1.7)
-  region_weather += " weather"
-  region_weather_w = weight_keyword(region_weather, 0.4)
+  weather += " weather"
+  weather_w = weight_keyword(weather, 0.4)
+  disability_new = f'adapted and usable for {disability}'
+  disability_w = weight_keyword(disability_new, 0.5)
 
   # * Create the prompt with additional details to improve its performance
-  return f"RAW photo, masterpiece, interior design, {environment_w}, {style_w}, {region_weather_w}, {budget_w}, ultra realistic render, 3D art, daylight, hyperrealistic, photorealistic, ultradetailed, 8k, soft lighting, high quality, film grain, Fujifilm XT3"
+  normal_prompt = f"RAW photo, masterpiece, interior design, {environment_w}, {style_w}, {weather_w}, {budget_w}, ultra realistic render, 3D art, daylight, hyperrealistic, photorealistic, ultradetailed, 8k, soft lighting, high quality, film grain, Fujifilm XT3"
+  disability_prompt = f"RAW photo, masterpiece, interior design, {environment_w}, {style_w}, {weather_w}, {budget_w}, {disability_w}, ultra realistic render, 3D art, daylight, hyperrealistic, photorealistic, ultradetailed, 8k, soft lighting, high quality, film grain, Fujifilm XT3"
+
+  if not disability:
+    prompt = normal_prompt
+  else:
+    prompt = disability_prompt
+
+  return prompt
 
 def image_grid(imgs, rows=2, cols=2):
   """Generate an image grid given a number of rows and columns"""
@@ -126,7 +143,6 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  txt2img_scheduler
         img2img.enable_model_cpu_offload()
       pipelines.append(img2img)
 
-    """
     # * Load the inpaint model
     with torch.no_grad():
       inpaint = StableDiffusionInpaintPipeline.from_single_file(
@@ -142,10 +158,9 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  txt2img_scheduler
         inpaint.enable_model_cpu_offload()
       pipelines.append(inpaint)
 
-    """
 
     # * Clear intermediate variables
-    del txt2img, img2img
+    del txt2img, img2img, inpaint
 
     return tuple(pipelines)
 
@@ -287,3 +302,15 @@ def images_to_b64_v2(images : list[Image.Image]) -> str:
     encodedB64_image = base64.b64encode(buffer.getvalue())
     encoded_images_list.append(encodedB64_image)
   return encoded_images_list
+
+def size_upload_files(file):
+  """Get the size of an UploadFile file and return it"""
+
+  # * Get the file size (in bytes)
+  file.file.seek(0, 2)
+  file_size = file.file.tell()
+
+  # * Move the cursor back to the beginning
+  file.seek(0)
+
+  return file_size
