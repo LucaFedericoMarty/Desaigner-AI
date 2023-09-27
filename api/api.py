@@ -28,6 +28,8 @@ from passlib.context import CryptContext
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, Annotated
 
+from huggingface_hub import hf_hub_download, snapshot_download
+
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 
@@ -123,7 +125,10 @@ app.add_middleware(
 
 """
 
-txt2img_model, img2img_model, inpaint_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.0_noVAE", inpaint_model_id = r"./Models/Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors")
+snapshot_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", repo_type="space")
+hf_hub_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", filename="Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors", local_dir="models")
+
+txt2img_model, img2img_model, inpaint_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.0_noVAE", inpaint_model_id = r"./models/Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors")
 mlsd_detector =  load_mlsd_detector(model_id='lllyasviel/ControlNet')#revision="fp16", #torch_dtype=torch.float16)
 
 # * Create the negative prompt for avoiding certain concepts in the photo
@@ -378,7 +383,7 @@ def img2img(budget : Annotated[str , Form(title="Budget of the re-design", descr
             weather : Annotated[str , Form(title="Weather of the region", description="The typical weather you of the region you are living")],
             disability : Annotated[str , Form(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
             input_image : Annotated[UploadFile, File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")],
-            steps : Annotated[int , Form(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
+            steps : Annotated[int , Form(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=1, le=50)] = 20, 
             guidance_scale : Annotated[float, Form(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 7, 
             num_images : Annotated[int , Form(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=1, le=4)] = 1,
             api_key: str = Security(get_api_key),):

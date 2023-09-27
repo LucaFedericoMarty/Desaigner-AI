@@ -143,6 +143,7 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  txt2img_scheduler
         img2img.enable_model_cpu_offload()
       pipelines.append(img2img)
 
+    
     # * Load the inpaint model
     with torch.no_grad():
       inpaint = StableDiffusionInpaintPipeline.from_single_file(
@@ -157,7 +158,6 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str,  txt2img_scheduler
         inpaint.enable_xformers_memory_efficient_attention()
         inpaint.enable_model_cpu_offload()
       pipelines.append(inpaint)
-
 
     # * Clear intermediate variables
     del txt2img, img2img, inpaint
