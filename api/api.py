@@ -18,6 +18,8 @@ from accelerate import PartialState
 import time
 from datetime import datetime, timedelta
 
+from dotenv import load_dotenv, find_dotenv
+
 from fastapi import FastAPI, Response, Request, HTTPException, status, UploadFile, Query, Body, File, Depends, Security, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
@@ -46,6 +48,15 @@ from api.schemas import Txt2ImgParams, Img2ImgParams, InpaintParams, ImageRespon
 MB_IN_BYTES = 1048576
 
 # http://127.0.0.1:8000
+
+# * Find the path of the dotenv file
+dotenv_path = find_dotenv(filename='.env', raise_error_if_not_found=True)
+
+# * Load the enviromental variables from the dotenv path
+load_dotenv(dotenv_path)
+
+# * Load the HF token from the dotenv file
+HF_TOKEN = os.getenv(key='HF_TOKEN')
 
 tags_metadata = [
     {
@@ -125,11 +136,15 @@ app.add_middleware(
 
 """
 
-snapshot_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", repo_type="space")
-hf_hub_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", filename="Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors", local_dir="models")
+# * Download all the files necessary to excute the API
+snapshot_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", ignore_patterns=["*.gitattriutes", "*.md", "*.ckpt"], allow_patterns=["*.json", "*.txt",  "scheduler/*", "text_encoder/*", "tokenizer/*", "unet/*", "vae/*"], token=HF_TOKEN)
+inpaint_model_path = hf_hub_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", filename="Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors")
+snapshot_download(repo_id="lllyasviel/control_v11p_sd15_mlsd", ignore_patterns=["*.gitattriutes", "*.md", "*.bin", "*.py", "*.png"], allow_patterns=["*.json", "*diffusion_pytorch_model.safetensors"], token=HF_TOKEN)
+mlsd_detector_path = hf_hub_download(repo_id="lllyasviel/ControlNet", filename="./annotator/ckpts/mlsd_large_512_fp32.pth")
 
-txt2img_model, img2img_model, inpaint_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.0_noVAE", inpaint_model_id = r"./models/Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors")
-mlsd_detector =  load_mlsd_detector(model_id='lllyasviel/ControlNet')#revision="fp16", #torch_dtype=torch.float16)
+# * Load the models
+txt2img_model, img2img_model, inpaint_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.1_noVAE", inpaint_model_id = inpaint_model_path, controlnet_model="lllyasviel/control_v11p_sd15_mlsd")
+mlsd_detector =  load_mlsd_detector(model_id="lllyasviel/ControlNet")#revision="fp16", #torch_dtype=torch.float16)
 
 # * Create the negative prompt for avoiding certain concepts in the photo
 negative_prompt = ("blurry, abstract : 1.3, cartoon : 1.3, animated : 1.5, unrealistic : 1.6, watermark, signature, two faces, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, cropped image, overexposed, underexposed, (image on TV : 1.5), (TV turned on : 1.4)")

@@ -93,13 +93,15 @@ def choose_scheduler(scheduler_name, model_pipeline):
     else:
       f"The scheduler {scheduler_name} is not compatible with {model_pipeline}"
 
-def load_all_pipelines(model_id: str, inpaint_model_id : str,  txt2img_scheduler = DPMSolverMultistepScheduler, img2img_scheduler = UniPCMultistepScheduler, controlnet_model = "lllyasviel/control_v11p_sd15_mlsd") -> models:
+def load_all_pipelines(model_id: str, inpaint_model_id : str, controlnet_model : str, txt2img_scheduler = DPMSolverMultistepScheduler, img2img_scheduler = UniPCMultistepScheduler) -> models:
     """Load the model pipeline and configure it"""
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # * Set the torch dtype to float16 if GPU are available, else set to float16, since float16 is not compatible with CPUs.
     torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32)
     pipelines = []
+
+
 
     # * Load the MLSD controlnet model pipeline
 
