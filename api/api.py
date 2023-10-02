@@ -272,14 +272,18 @@ def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design",
     images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     # * Images to list of bytes
     imagesBytes = images_to_bytes(images)
-    # * Encode the images bytes list
-    imagesBytesFinal = [bytes_final for bytes_final in imagesBytes] 
-    # * Create an image grid
-    grid = image_grid(images)
-    print(type(imagesBytes))
-    #print(type(imagesBytesEncoded))
+    # * Create a list to store the image responses
+    image_responses = []
 
-    return imagesBytesFinal
+    # Iterate over the image bytes list
+    for image_bytes in imagesBytes:
+        # Create a response object with the image bytes
+        image_response = Response(content=image_bytes, media_type="image/jpeg")
+        # Append the response object to the list
+        image_responses.append(image_response)
+
+    # Return the list of image responses
+    return image_responses
 
 @app.post("/txt2img/v1/v4", tags=["text2image", "old"])
 def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
