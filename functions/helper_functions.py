@@ -182,21 +182,22 @@ def zip_images(file_objects : BytesIO):
       zipf.writestr(f'image {i + 1}.png', file_obj.getvalue())
   return zip_filename
 
-def images_to_bytes(images : list[Image.Image]) -> list[BytesIO]:
-  """Convert images to a list of bytes"""
+def image_to_bytes(image: Image.Image) -> BytesIO:
+    """Converts a single image to bytes"""
 
-  # * Initialize a list to store the image file objects
-  file_objects= []
-  # * Index the images
-  for image in images:
     # * Create the buffer for storing each image
     buffer = BytesIO()
     # * Save each image in the buffer
     image.save(buffer, format="PNG")
-    # * Store the image file objects in the list previously mentioned
-    #buffer.seek(0)
-    file_objects.append(buffer.getvalue().decode("latin-1"))
-  return file_objects
+    # * Get the value of the image as bytes
+    # image.seek(0) 
+    return buffer.getvalue().decode("latin-1")
+
+def images_to_bytes(images : list[Image.Image]) -> list[BytesIO]:
+  """Converts images to a list of bytes"""
+  
+  # * Use map to apply the image_to_bytes function to all images
+  return list(map(image_to_bytes, images))
 
 def images_to_mime(images : list[Image.Image]):
   """Convert images to mime objects"""
