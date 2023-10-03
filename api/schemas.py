@@ -8,7 +8,7 @@ from api.auth.auth import get_api_key
 
 IMAGES_B64 = List[str]
 
-IMAGES = List[Response]
+IMAGES = List
 
 class Txt2ImgParams(BaseModel):
     """Pydantic model for Text2Image operations
@@ -96,4 +96,4 @@ class ImageV2Response(BaseModel):
     Attributes:
     
     - Images: List of images in base64 format"""
-    images: IMAGES = Field(..., description="List of images in base64 format")
+    images : IMAGES = Field(..., description="List of images in base64 format")

@@ -253,7 +253,7 @@ def txt2imgclass(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key))
 
     return ImageResponse(images=b64_images)
 
-@app.post("/txt2img/v1/v3", tags=["text2image", "old"])
+@app.post("/txt2img/v1/v3", response_model=ImageV2Response, tags=["text2image", "old"])
 def txt2img_bytes(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key)):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
@@ -266,6 +266,7 @@ def txt2img_bytes(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key)
     images_bytes = images_to_bytes(images)
     # * Create list of responses of images bytes using list comprehension
     image_responses = [Response(content=image_bytes, media_type="image/jpeg") for image_bytes in images_bytes]
+    print(type(image_responses))
 
     return ImageV2Response(images=image_responses)
 
