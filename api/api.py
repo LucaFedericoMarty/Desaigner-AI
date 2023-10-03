@@ -270,6 +270,22 @@ def txt2img_bytes(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key)
 
     return ImageV2Response(images=image_responses)
 
+@app.post("/txt2img/v3", response_model=ImageV2Response, tags=["text2image", "old"])
+def txt2img_bytes(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key)):
+    
+    """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
+
+    # * Create the prompt for creating the image
+    prompt = create_prompt(budget=params.budget, style=params.style, environment=params.environment, weather=params.weather, disability=params.disability)
+    # * Create the images using the given prompt and some other parameters
+    images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=params.steps, guidance_scale=params.guidance_scale, num_images_per_prompt=params.num_images).images
+    # * Images to list of bytes
+    images_bytes = images_to_bytes(images)
+    # * Create list of responses of images bytes using list comprehension
+
+    return ImageV2Response(images=images_bytes)
+
+
 @app.post("/txt2img/v1/v4", tags=["text2image", "old"])
 def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],

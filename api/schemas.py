@@ -8,7 +8,7 @@ from api.auth.auth import get_api_key
 
 IMAGES_B64 = List[str]
 
-IMAGES = List
+IMAGES = List[str]
 
 class Txt2ImgParams(BaseModel):
     """Pydantic model for Text2Image operations
