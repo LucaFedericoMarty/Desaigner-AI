@@ -43,7 +43,7 @@ from api.auth.auth import get_api_key
 
 from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, images_to_mime2, size_upload_files, models  
 
-from api.schemas import Txt2ImgParams, Img2ImgParams, InpaintParams, ImageResponse
+from api.schemas import Txt2ImgParams, Img2ImgParams, InpaintParams, ImageResponse, ImageV2Response
 
 MB_IN_BYTES = 1048576
 
@@ -266,8 +266,8 @@ def txt2img_bytes(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key)
     images_bytes = images_to_bytes(images)
     # * Create list of responses of images bytes using list comprehension
     image_responses = [Response(content=image_bytes, media_type="image/jpeg") for image_bytes in images_bytes]
-    
-    return image_responses
+
+    return ImageV2Response(images=image_responses)
 
 @app.post("/txt2img/v1/v4", tags=["text2image", "old"])
 def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],

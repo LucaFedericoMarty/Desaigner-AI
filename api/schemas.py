@@ -1,4 +1,4 @@
-from fastapi import UploadFile, Query, Security, File
+from fastapi import UploadFile, Query, Security, File, Response
 from fastapi.security.api_key import APIKey
 
 from pydantic import BaseModel, Field
@@ -7,6 +7,8 @@ from typing import Annotated, Optional, List, Dict
 from api.auth.auth import get_api_key
 
 IMAGES_B64 = List[str]
+
+IMAGES = List[Response]
 
 class Txt2ImgParams(BaseModel):
     """Pydantic model for Text2Image operations
@@ -87,3 +89,11 @@ class ImageResponse(BaseModel):
     
     - Images: List of images in base64 format"""
     images: IMAGES_B64 = Field(..., description="List of images in base64 format")
+
+class ImageV2Response(BaseModel):
+    """Pydantic model for image responses
+    
+    Attributes:
+    
+    - Images: List of images in base64 format"""
+    images: IMAGES = Field(..., description="List of images in base64 format")
