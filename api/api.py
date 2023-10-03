@@ -208,7 +208,7 @@ def txt2img(budget : Annotated[str , Query(title="Budget of the re-design", desc
     return FileResponse(zip_filename, filename='images.zip', media_type='application/zip')
 
 @app.post("/txt2img/v1/v2", tags=["text2image", "old"])
-def txt2imgjson(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
+def txt2img_json(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
                 style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
                 environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
                 weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
@@ -247,42 +247,26 @@ def txt2imgclass(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key))
     # * Create the images using the given prompt and some other parameters
     images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=params.steps, guidance_scale=params.guidance_scale, num_images_per_prompt=params.num_images).images
     # * Encode the images in base64 and save them to a JSON file
-    b64Images = images_to_b64_v2(images)
+    b64_images = images_to_b64_v2(images)
     # * Create an image grid
     grid = image_grid(images)
 
-    return ImageResponse(images=b64Images)
+    return ImageResponse(images=b64_images)
 
 @app.post("/txt2img/v1/v3", tags=["text2image", "old"])
-def txt2imgBytes(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
-                style : Annotated[str , Query(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
-                environment : Annotated[str , Query(title="Environment of the re-design", description="The environment you are looking to re-design")],
-                weather : Annotated[str , Query(title="Weather of the region", description="The typical weather you of the region you are living")],
-                disability : Annotated[str , Query(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
-                steps : Annotated[int , Query(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20,
-                guidance_scale : Annotated[float, Query(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 7,
-                num_images : Annotated[int , Query(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=2, le=6)] = 2,
-                api_key: APIKey = Security(get_api_key),):
+def txt2img_bytes(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key)):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
 
     # * Create the prompt for creating the image
-    prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
+    prompt = create_prompt(budget=params.budget, style=params.style, environment=params.environment, weather=params.weather, disability=params.disability)
     # * Create the images using the given prompt and some other parameters
-    images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
+    images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=params.steps, guidance_scale=params.guidance_scale, num_images_per_prompt=params.num_images).images
     # * Images to list of bytes
-    imagesBytes = images_to_bytes(images)
-    # * Create a list to store the image responses
-    image_responses = []
-
-    # Iterate over the image bytes list
-    for image_bytes in imagesBytes:
-        # Create a response object with the image bytes
-        image_response = Response(content=image_bytes, media_type="image/jpeg")
-        # Append the response object to the list
-        image_responses.append(image_response)
-
-    # Return the list of image responses
+    images_bytes = images_to_bytes(images)
+    # * Create list of responses of images bytes using list comprehension
+    image_responses = [Response(content=image_bytes, media_type="image/jpeg") for image_bytes in images_bytes]
+    
     return image_responses
 
 @app.post("/txt2img/v1/v4", tags=["text2image", "old"])
@@ -396,7 +380,7 @@ def img2img(params: Img2ImgParams = Depends(),
     return ImageResponse(images=b64Images)
 
 @app.post("/img2img/v3", tags=["image2image", "working"])
-def img2img(budget : Annotated[str , Form(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
+def img2img_form(budget : Annotated[str , Form(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
             style : Annotated[str , Form(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
             environment : Annotated[str , Form(title="Environment of the re-design", description="The environment you are looking to re-design")],
             weather : Annotated[str , Form(title="Weather of the region", description="The typical weather you of the region you are living")],
@@ -432,11 +416,11 @@ def img2img(budget : Annotated[str , Form(title="Budget of the re-design", descr
     # * Create the images using the given prompt and some other parameters
     images = img2img_model(prompt=prompt, negative_prompt=negative_prompt, image=input_image_final, controlnet_conditioning_scale = 1.0, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     # * Encode the images in base64 and save them to a JSON file
-    b64Images = images_to_b64_v2(images)
+    b64_images = images_to_b64_v2(images)
     # * Create an image grid
     grid = image_grid(images)
 
-    return ImageResponse(images=b64Images)
+    return ImageResponse(images=b64_images)
 
 @app.post("/inpaint/v1", tags=["inpaint", "old"])
 def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
@@ -584,11 +568,11 @@ def inpaint(budget : Annotated[str , Form(title="Budget of the re-design", descr
     # * Create the images using the given prompt and some other parameters
     images = inpaint_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, image=input_img, mask_image=mask_img, num_images_per_prompt=num_images).images
     # * Encode the images in base64 and save them to a JSON file
-    b64Images = images_to_b64_v2(images)
+    b64_images = images_to_b64_v2(images)
     # * Create an image grid
     grid = image_grid(images)
 
-    return ImageResponse(images=b64Images)
+    return ImageResponse(images=b64_images)
 
 @app.post("/image_variation")
 def image_variation(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
