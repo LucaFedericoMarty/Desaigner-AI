@@ -61,6 +61,9 @@ HF_TOKEN = os.getenv(key='HF_TOKEN')
 # * Load the cache dir path variable from the dotenv file
 CACHE_DIR_PATH = os.getenv(key='CACHE_DIR_PATH')
 
+import os
+os.environ['TRANSFORMERS_CACHE'] = CACHE_DIR_PATH
+
 tags_metadata = [
     {
         "name": "test",
