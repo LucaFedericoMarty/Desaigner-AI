@@ -190,8 +190,8 @@ def image_to_bytes(image: Image.Image) -> BytesIO:
     # * Save each image in the buffer
     image.save(buffer, format="PNG")
     # * Get the value of the image as bytes
-    # image.seek(0) 
-    return buffer.getvalue().decode("latin-1")
+    buffer.seek(0) 
+    return buffer.getvalue().decode('utf-8')
 
 def images_to_bytes(images : list[Image.Image]) -> list[BytesIO]:
   """Converts images to a list of bytes"""

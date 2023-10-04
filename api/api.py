@@ -58,6 +58,9 @@ load_dotenv(dotenv_path)
 # * Load the HF token from the dotenv file
 HF_TOKEN = os.getenv(key='HF_TOKEN')
 
+# * Load the cache dir path variable from the dotenv file
+CACHE_DIR_PATH = os.getenv(key='CACHE_DIR_PATH')
+
 tags_metadata = [
     {
         "name": "test",
@@ -137,10 +140,10 @@ app.add_middleware(
 """
 
 # * Download all the files necessary to excute the API
-snapshot_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", ignore_patterns=["*.gitattriutes", "*.md", "*.ckpt"], allow_patterns=["*.json", "*.txt",  "scheduler/*", "text_encoder/*", "tokenizer/*", "unet/*", "vae/*"], token=HF_TOKEN)
-inpaint_model_path = hf_hub_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", filename="Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors")
-snapshot_download(repo_id="lllyasviel/control_v11p_sd15_mlsd", ignore_patterns=["*.gitattriutes", "*.md", "*.bin", "*.py", "*.png"], allow_patterns=["*.json", "*diffusion_pytorch_model.safetensors"], token=HF_TOKEN)
-mlsd_detector_path = hf_hub_download(repo_id="lllyasviel/ControlNet", filename="./annotator/ckpts/mlsd_large_512_fp32.pth")
+snapshot_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", ignore_patterns=["*.gitattriutes", "*.md", "*.ckpt"], allow_patterns=["*.json", "*.txt",  "scheduler/*", "text_encoder/*", "tokenizer/*", "unet/*", "vae/*"], token=HF_TOKEN, cache_dir=CACHE_DIR_PATH)
+inpaint_model_path = hf_hub_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", filename="Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors", cache_dir=CACHE_DIR_PATH)
+snapshot_download(repo_id="lllyasviel/control_v11p_sd15_mlsd", ignore_patterns=["*.gitattriutes", "*.md", "*.bin", "*.py", "*.png"], allow_patterns=["*.json", "*diffusion_pytorch_model.safetensors"], token=HF_TOKEN, cache_dir=CACHE_DIR_PATH)
+mlsd_detector_path = hf_hub_download(repo_id="lllyasviel/ControlNet", filename="./annotator/ckpts/mlsd_large_512_fp32.pth", cache_dir=CACHE_DIR_PATH)
 
 # * Load the models
 txt2img_model, img2img_model, inpaint_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.1_noVAE", inpaint_model_id = inpaint_model_path, controlnet_model="lllyasviel/control_v11p_sd15_mlsd")
@@ -253,7 +256,7 @@ def txt2imgclass(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key))
 
     return ImageResponse(images=b64_images)
 
-@app.post("/txt2img/v1/v3", response_model=ImageV2Response, tags=["text2image", "old"])
+@app.post("/txt2img/v1/v3", tags=["text2image", "old"])
 def txt2img_bytes(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key)):
     
     """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
@@ -266,9 +269,8 @@ def txt2img_bytes(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key)
     images_bytes = images_to_bytes(images)
     # * Create list of responses of images bytes using list comprehension
     image_responses = [Response(content=image_bytes, media_type="image/jpeg") for image_bytes in images_bytes]
-    print(type(image_responses))
 
-    return ImageV2Response(images=image_responses)
+    return image_responses
 
 @app.post("/txt2img/v3", response_model=ImageV2Response, tags=["text2image", "old"])
 def txt2img_bytes(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key)):
