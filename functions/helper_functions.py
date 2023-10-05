@@ -50,10 +50,10 @@ def weight_keyword(keyword : str, weight : float) -> str:
     # * Weight the keyword by the given weight in a string format
     return (f'({keyword} : {weight})')
 
-def create_prompt(budget : str, style : str , environment : str, weather : str, disability : str = "") -> str:
+def create_prompt(budget : str, style : str , environment : str, weather : str, disability : str or None) -> str:
   """Creat an adequate prompt with each keyword weighted"""
 
-  if len(disability) > 0:
+  if disability:
     disability = lowercase_first_letter(disability)
 
   # * Create all the keywords or key phrases to weight
