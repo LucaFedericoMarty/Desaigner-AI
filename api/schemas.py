@@ -4,11 +4,13 @@ from fastapi.security.api_key import APIKey
 from pydantic import BaseModel, Field
 from typing import Annotated, Optional, List, Dict
 
+from PIL import Image
+
 from api.auth.auth import get_api_key
 
 IMAGES_B64 = List[str]
 
-IMAGES = List[str]
+IMAGE = Image.Image
 
 class Txt2ImgParams(BaseModel):
     """Pydantic model for Text2Image operations
@@ -89,11 +91,3 @@ class ImageResponse(BaseModel):
     
     - Images: List of images in base64 format"""
     images: IMAGES_B64 = Field(..., description="List of images in base64 format")
-
-class ImageV2Response(BaseModel):
-    """Pydantic model for image responses
-    
-    Attributes:
-    
-    - Images: List of images in base64 format"""
-    images : IMAGES = Field(..., description="List of images in base64 format")

@@ -43,7 +43,7 @@ from api.auth.auth import get_api_key
 
 from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, images_to_mime2, size_upload_files, models  
 
-from api.schemas import Txt2ImgParams, Img2ImgParams, InpaintParams, ImageResponse, ImageV2Response
+from api.schemas import Txt2ImgParams, Img2ImgParams, InpaintParams, ImageResponse
 
 MB_IN_BYTES = 1048576
 

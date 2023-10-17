@@ -25,6 +25,8 @@ import json
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 
+from api.schemas import IMAGE
+
 # * Alias for models
 
 models = DiffusionPipeline, StableDiffusionControlNetPipeline, StableDiffusionInpaintPipeline
@@ -317,3 +319,25 @@ def size_upload_files(file):
   file.seek(0)
 
   return file_size
+
+def resize_below_number(image : IMAGE, threshold : int = 512):
+  """Resizing the image below 512 pixels following its original aspect ratio"""
+
+  width, height = image.size
+
+  # * No need to resize, already below the threshold.
+  if max(width, height) <= threshold:
+    return image
+
+  # * Determine the new dimensions while preserving the aspect ratio.
+  if width > height:
+      new_width = threshold
+      new_height = int(height * (threshold / width))
+  else:
+      new_height = threshold
+      new_width = int(width * (threshold / height))
+  
+  # * Resize the image with the calculated dimensions.
+  resized_image = image.resize((new_width, new_height), Image.ANTIALIAS)
+  
+  return resized_image
