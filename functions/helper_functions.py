@@ -26,6 +26,16 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 
 from api.schemas import IMAGE
+from dotenv import load_dotenv, find_dotenv
+
+# * Find the path of the dotenv file
+dotenv_path = find_dotenv(filename='.env', raise_error_if_not_found=True)
+
+# * Load the enviromental variables from the dotenv path
+load_dotenv(dotenv_path)
+
+# * Load the cache dir path variable from the dotenv file
+CACHE_DIR_PATH = os.getenv(key='CACHE_DIR_PATH')
 
 # * Alias for models
 
@@ -41,10 +51,10 @@ def weight_keyword(keyword : str, weight : float) -> str:
     # * Weight the keyword by the given weight in a string format
     return (f'({keyword} : {weight})')
 
-def create_prompt(budget : str, style : str , environment : str, weather : str, disability : str = "") -> str:
+def create_prompt(budget : str, style : str , environment : str, weather : str, disability : str or None) -> str:
   """Creat an adequate prompt with each keyword weighted"""
 
-  if len(disability) > 0:
+  if disability:
     disability = lowercase_first_letter(disability)
 
   # * Create all the keywords or key phrases to weight
@@ -108,7 +118,7 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str, controlnet_model :
     # * Load the MLSD controlnet model pipeline
 
     controlnet = ControlNetModel.from_pretrained(
-    controlnet_model, torch_dtype=torch_dtype, use_safetensos=True)
+    controlnet_model, torch_dtype=torch_dtype, use_safetensos=True, cache_dir = CACHE_DIR_PATH)
 
     # TODO: Load Stable Diffusion pipeline with OpenVINO or ONNX
 
@@ -120,6 +130,7 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str, controlnet_model :
         torch_dtype=torch_dtype,
         #revision='fp16',
         use_safetensors=True,
+        cache_dir = CACHE_DIR_PATH
         )
       choose_scheduler(txt2img_scheduler, txt2img)
       txt2img.enable_vae_slicing()
@@ -138,7 +149,8 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str, controlnet_model :
           torch_dtype=torch_dtype,
           #revision='fp16',
           use_safetensors=True,
-          controlnet=controlnet)
+          controlnet=controlnet,
+          cache_dir = CACHE_DIR_PATH)
       choose_scheduler(img2img_scheduler, img2img)
       img2img.enable_vae_slicing()
       img2img.enable_attention_slicing()
@@ -154,6 +166,7 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str, controlnet_model :
         inpaint_model_id,
         #custom_pipeline="lpw_stable_diffusion",
         #torch_dtype=torch_dtype,
+        cache_dir = CACHE_DIR_PATH
         )
       choose_scheduler(txt2img_scheduler, inpaint)
       #inpaint.enable_vae_slicing()
@@ -169,7 +182,7 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str, controlnet_model :
     return tuple(pipelines)
 
 def load_mlsd_detector(model_id : str):
-   return MLSDdetector.from_pretrained(model_id)
+   return MLSDdetector.from_pretrained(model_id, cache_dir = CACHE_DIR_PATH)
 
 def zip_images(file_objects : BytesIO):
   """Zip images given their file objects. It returns a zip folder with the corresponding image file name and its value"""
@@ -286,12 +299,10 @@ def images_to_b64(images : list[Image.Image]) -> str:
 
 def images_to_b64_v2(images : list[Image.Image]) -> str:
   """Convert a list of images into a JSON string with each image encoded in base64 format"""
-
-  # * Initialize an empty list to store the base 64 images strings
-  encoded_images_list = []
-  # * Index each image with its respective index
-  for image in images:
-    # * Create a memory buffer (Space of memory in RAM) to store the image data in bytes
+  
+  # * Define an embedded function to convert a single image to base64 format
+  def convert_image(image):
+     # * Create a memory buffer (Space of memory in RAM) to store the image data in bytes
     buffer = BytesIO()
     # * Save each image in memory
     image.save(buffer, format="PNG")
@@ -303,10 +314,11 @@ def images_to_b64_v2(images : list[Image.Image]) -> str:
         # * - Calculate the 8-bit binary equivalent of the ASCII values --> 15, 50, 45, 33, 40, 39 are 01010000 01111001 01110100 01101000 01101111 01101110
         # * - Convert the 8-bit chunks into chunks of 6 bits by simply re-grouping the digits --> 01010000 01111001 01110100 01101000 01101111 01101110 are 010100 000111 100101 110100 011010 000110 111101 101110
         # * - Convert the 6-bit binary groups to their respective decimal values. --> 010100 000111 100101 110100 011010 000110 111101 101110 are 20, 7, 37, 52, 26, 6, 61, 46
-        # * - Using a base64 encoding table, assign the respective base64 character for each decimal value --> 20, 7, 37, 52, 26, 6, 61, 46 are UHl0aG9u
-    encodedB64_image = base64.b64encode(buffer.getvalue())
-    encoded_images_list.append(encodedB64_image)
-  return encoded_images_list
+        # * - Using a base64 encoding table, assign the respective base64 character for each decimal value --> 20, 7, 37, 52, 26, 6, 61, 46 are UHl0aG9
+    return base64.b64encode(buffer.getvalue())
+
+  # * Use map to apply the conversion function to each image in the input list
+  return list(map(convert_image, images))
 
 def size_upload_files(file):
   """Get the size of an UploadFile file and return it"""

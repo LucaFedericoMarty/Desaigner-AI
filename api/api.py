@@ -61,6 +61,9 @@ HF_TOKEN = os.getenv(key='HF_TOKEN')
 # * Load the cache dir path variable from the dotenv file
 CACHE_DIR_PATH = os.getenv(key='CACHE_DIR_PATH')
 
+import os
+os.environ['TRANSFORMERS_CACHE'] = CACHE_DIR_PATH
+
 tags_metadata = [
     {
         "name": "test",
@@ -403,7 +406,7 @@ def img2img_form(budget : Annotated[str , Form(title="Budget of the re-design", 
             style : Annotated[str , Form(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
             environment : Annotated[str , Form(title="Environment of the re-design", description="The environment you are looking to re-design")],
             weather : Annotated[str , Form(title="Weather of the region", description="The typical weather you of the region you are living")],
-            disability : Annotated[str , Form(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
+            disability : Annotated[Optional[str] , Form(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
             input_image : Annotated[UploadFile, File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")],
             steps : Annotated[int , Form(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=1, le=50)] = 20, 
             guidance_scale : Annotated[float, Form(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 7, 
@@ -547,7 +550,7 @@ def inpaint(budget : Annotated[str , Form(title="Budget of the re-design", descr
             style : Annotated[str , Form(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
             environment : Annotated[str , Form(title="Environment of the re-design", description="The environment you are looking to re-design")],
             weather : Annotated[str , Form(title="Weather of the region", description="The typical weather you of the region you are living")],
-            disability : Annotated[str , Form(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
+            disability : Annotated[Optional[str] , Form(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
             input_image : Annotated[UploadFile , File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")], 
             mask_image : Annotated[UploadFile , File(title="Image mask of the input image", description="This image should be in black and white, and the white parts should be the parts you want to change and the black parts the ones you want to mantain")], 
             steps : Annotated[int , Form(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=10, le=50)] = 20, 
