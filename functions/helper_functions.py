@@ -3,6 +3,7 @@ StableDiffusionPipeline,
 StableDiffusionImg2ImgPipeline,
 StableDiffusionInpaintPipeline,
 StableDiffusionImageVariationPipeline,
+StableDiffusionUpscalePipeline,
 EulerAncestralDiscreteScheduler,
 UniPCMultistepScheduler,
 StableDiffusionControlNetPipeline,
@@ -182,7 +183,20 @@ def load_all_pipelines(model_id: str, inpaint_model_id : str, controlnet_model :
     return tuple(pipelines)
 
 def load_mlsd_detector(model_id : str):
+   """Function for loading the MLSD Detector"""
+   
    return MLSDdetector.from_pretrained(model_id, cache_dir = CACHE_DIR_PATH)
+
+def load_upscale_model(upscale_model_path : str):
+  """Function for loading the upscaling model based on a path"""
+
+  with torch.no_grad():
+    upscale = StableDiffusionUpscalePipeline(upscale_model_path)
+    upscale.enable_attention_slicing()
+    if torch.cuda.is_available():
+      upscale.enable_xformers_memory_efficient_attention()
+      upscale.enable_model_cpu_offload()
+    return upscale
 
 def zip_images(file_objects : BytesIO):
   """Zip images given their file objects. It returns a zip folder with the corresponding image file name and its value"""
@@ -337,14 +351,26 @@ def resize_below_number(image : IMAGE, threshold : int = 512):
 
   width, height = image.size
 
-  # * No need to resize, already below the threshold.
+  # * Check between width and height which is the bigger one
+  # * If the maximum is lower or equal than the threshold:
+    # * No need to resize, already below the threshold.
   if max(width, height) <= threshold:
     return image
 
   # * Determine the new dimensions while preserving the aspect ratio.
+
+  # * If the width is bigger than the height, that means the dividing factor should be calculated base on the width
+  # * The new width should the threshold, since it is the biggest part of the image
+  # * Calculate the new height based on the propocionality between the threshold and the width
+
   if width > height:
       new_width = threshold
       new_height = int(height * (threshold / width))
+
+  # * If the height is bigger than the width, that means the dividing factor should be calculated base on the height
+  # * The new height should the threshold, since it is the biggest part of the image
+  # * Calculate the new width based on the propocionality between the threshold and the height
+
   else:
       new_height = threshold
       new_width = int(width * (threshold / height))

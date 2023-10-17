@@ -147,6 +147,7 @@ snapshot_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", ignore_pattern
 inpaint_model_path = hf_hub_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", filename="Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors", cache_dir=CACHE_DIR_PATH)
 snapshot_download(repo_id="lllyasviel/control_v11p_sd15_mlsd", ignore_patterns=["*.gitattriutes", "*.md", "*.bin", "*.py", "*.png"], allow_patterns=["*.json", "*diffusion_pytorch_model.safetensors"], token=HF_TOKEN, cache_dir=CACHE_DIR_PATH)
 mlsd_detector_path = hf_hub_download(repo_id="lllyasviel/ControlNet", filename="./annotator/ckpts/mlsd_large_512_fp32.pth", cache_dir=CACHE_DIR_PATH)
+upscale_model_path = hf_hub_download(repo_id="stabilityai/stable-diffusion-x4-upscaler", filename="x4-upscaler-ema.safetensors", cache_dir=CACHE_DIR_PATH)
 
 # * Load the models
 txt2img_model, img2img_model, inpaint_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.1_noVAE", inpaint_model_id = inpaint_model_path, controlnet_model="lllyasviel/control_v11p_sd15_mlsd")
