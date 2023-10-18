@@ -41,7 +41,7 @@ from starlette.status import HTTP_413_REQUEST_ENTITY_TOO_LARGE, HTTP_415_UNSUPPO
 from fastapi.security.api_key import APIKey
 from api.auth.auth import get_api_key
 
-from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector ,zip_images , images_to_bytes, images_to_mime, images_to_mime2, size_upload_files, models  
+from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector, load_upscale_model, zip_images , images_to_bytes, images_to_mime, images_to_mime2, size_upload_files, models, resize_below_number
 
 from api.schemas import Txt2ImgParams, Img2ImgParams, InpaintParams, ImageResponse
 
@@ -152,6 +152,7 @@ upscale_model_path = hf_hub_download(repo_id="stabilityai/stable-diffusion-x4-up
 # * Load the models
 txt2img_model, img2img_model, inpaint_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.1_noVAE", inpaint_model_id = inpaint_model_path, controlnet_model="lllyasviel/control_v11p_sd15_mlsd")
 mlsd_detector =  load_mlsd_detector(model_id="lllyasviel/ControlNet")#revision="fp16", #torch_dtype=torch.float16)
+upscale_model = load_upscale_model(upscale_model_path=upscale_model_path)
 
 # * Create the negative prompt for avoiding certain concepts in the photo
 negative_prompt = ("blurry, abstract : 1.3, cartoon : 1.3, animated : 1.5, unrealistic : 1.6, watermark, signature, two faces, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, cropped image, overexposed, underexposed, (image on TV : 1.5), (TV turned on : 1.4)")
@@ -440,6 +441,53 @@ def img2img_form(budget : Annotated[str , Form(title="Budget of the re-design", 
     images = img2img_model(prompt=prompt, negative_prompt=negative_prompt, image=input_image_final, controlnet_conditioning_scale = 1.0, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     # * Encode the images in base64 and save them to a JSON file
     b64_images = images_to_b64_v2(images)
+    # * Create an image grid
+    grid = image_grid(images)
+
+    return ImageResponse(images=b64_images)
+
+@app.post("/img2img/v4", tags=["image2image", "working"])
+def img2img_form_upscale(budget : Annotated[str , Form(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
+            style : Annotated[str , Form(title="Style of the re-design", description="Choose any interior design style that best suits your desires")],
+            environment : Annotated[str , Form(title="Environment of the re-design", description="The environment you are looking to re-design")],
+            weather : Annotated[str , Form(title="Weather of the region", description="The typical weather you of the region you are living")],
+            disability : Annotated[Optional[str] , Form(title="Type of disability of the user", description="In case the user has a disability, the user should enter the disabilty")],
+            input_image : Annotated[UploadFile, File(title="Image desired to re-design", description="The model will base the re-design based on the characteristics of this image")],
+            steps : Annotated[int , Form(title="Number of steps necessary to create images", description="More denoising steps usually lead to a higher quality image at the expense of slower inference", ge=1, le=50)] = 20, 
+            guidance_scale : Annotated[float, Form(title="Number that represents the fidelity of prompt when creating the image", description="Higher guidance scale encourages to generate images that are closely linked to the text prompt, usually at the expense of lower image quality", ge=3.5 , le=7.5)] = 7, 
+            num_images : Annotated[int , Form(title="Number of images to create", description="The higher the number, the more time required to create the images" , ge=1, le=4)] = 1,
+            api_key: str = Security(get_api_key),):
+    
+    """Image-to-image route request that performs a image-to-image process using a pre-trained Stable Diffusion Model"""
+
+    if input_image.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=f"File type of {input_image.content_type} is not valid")
+
+    # * Get the file size
+    file_size = size_upload_files(input_image)
+
+    # * Raise HTTP Exception in case the file is too large
+    if file_size > 5 * MB_IN_BYTES:
+        raise HTTPException(status_code=HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File too large")
+
+    # * Create the prompt for creating the image
+    prompt = create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
+    # * Move the cursor to the beginning of the file
+    input_image.file.seek(0)
+    # * Access the file object and get its contents
+    input_image_file_object_content = input_image.file.read()
+    # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
+    input_img = Image.open(BytesIO(input_image_file_object_content))
+    # * Resize input image
+    resized_image = resize_below_number(input_img)
+    # * Convert the image to mlsd line detector format
+    input_image_final = mlsd_detector(resized_image)
+    # * Create the images using the given prompt and some other parameters
+    images = img2img_model(prompt=prompt, negative_prompt=negative_prompt, image=input_image_final, controlnet_conditioning_scale = 1.0, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
+    # * Upscaled all images
+    upscaled_images = [upscale_model(image) for image in images]
+    # * Encode the images in base64 and save them to a JSON file
+    b64_images = images_to_b64_v2(upscaled_images)
     # * Create an image grid
     grid = image_grid(images)
 
