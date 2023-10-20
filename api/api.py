@@ -147,12 +147,12 @@ snapshot_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", ignore_pattern
 inpaint_model_path = hf_hub_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", filename="Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors", cache_dir=CACHE_DIR_PATH)
 snapshot_download(repo_id="lllyasviel/control_v11p_sd15_mlsd", ignore_patterns=["*.gitattriutes", "*.md", "*.bin", "*.py", "*.png"], allow_patterns=["*.json", "*diffusion_pytorch_model.safetensors"], token=HF_TOKEN, cache_dir=CACHE_DIR_PATH)
 mlsd_detector_path = hf_hub_download(repo_id="lllyasviel/ControlNet", filename="./annotator/ckpts/mlsd_large_512_fp32.pth", cache_dir=CACHE_DIR_PATH)
-upscale_model_path = hf_hub_download(repo_id="stabilityai/stable-diffusion-x4-upscaler", filename="x4-upscaler-ema.safetensors", cache_dir=CACHE_DIR_PATH)
+snapshot_download(repo_id="stabilityai/stable-diffusion-x4-upscaler", ignore_patterns=["*.gitattriutes", "*.md", "*.ckpt", "x4-upscaler-ema.safetensors"], allow_patterns=["*.json", "*.txt",  "/low_res_scheduler", "scheduler/*", "text_encoder/*", "tokenizer/*", "unet/*", "vae/*"], token=HF_TOKEN, cache_dir=CACHE_DIR_PATH)
 
 # * Load the models
 txt2img_model, img2img_model, inpaint_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.1_noVAE", inpaint_model_id = inpaint_model_path, controlnet_model="lllyasviel/control_v11p_sd15_mlsd")
 mlsd_detector =  load_mlsd_detector(model_id="lllyasviel/ControlNet")#revision="fp16", #torch_dtype=torch.float16)
-upscale_model = load_upscale_model(upscale_model_path=upscale_model_path)
+upscale_model = load_upscale_model(upscale_model_id="stabilityai/stable-diffusion-x4-upscaler")
 
 # * Create the negative prompt for avoiding certain concepts in the photo
 negative_prompt = ("blurry, abstract : 1.3, cartoon : 1.3, animated : 1.5, unrealistic : 1.6, watermark, signature, two faces, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, cropped image, overexposed, underexposed, (image on TV : 1.5), (TV turned on : 1.4)")
@@ -276,22 +276,6 @@ def txt2img_bytes(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key)
     image_responses = [Response(content=image_bytes, media_type="image/jpeg") for image_bytes in images_bytes]
 
     return image_responses
-
-@app.post("/txt2img/v3", response_model=ImageV2Response, tags=["text2image", "old"])
-def txt2img_bytes(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key)):
-    
-    """Text-to-image route request that performs a text-to-image process using a pre-trained Stable Diffusion Model"""
-
-    # * Create the prompt for creating the image
-    prompt = create_prompt(budget=params.budget, style=params.style, environment=params.environment, weather=params.weather, disability=params.disability)
-    # * Create the images using the given prompt and some other parameters
-    images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=params.steps, guidance_scale=params.guidance_scale, num_images_per_prompt=params.num_images).images
-    # * Images to list of bytes
-    images_bytes = images_to_bytes(images)
-    # * Create list of responses of images bytes using list comprehension
-
-    return ImageV2Response(images=images_bytes)
-
 
 @app.post("/txt2img/v1/v4", tags=["text2image", "old"])
 def txt2img_mime(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
@@ -485,7 +469,7 @@ def img2img_form_upscale(budget : Annotated[str , Form(title="Budget of the re-d
     # * Create the images using the given prompt and some other parameters
     images = img2img_model(prompt=prompt, negative_prompt=negative_prompt, image=input_image_final, controlnet_conditioning_scale = 1.0, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     # * Upscaled all images
-    upscaled_images = [upscale_model(image) for image in images]
+    upscaled_images = [upscale_model(prompt=prompt, image=image) for image in images]
     # * Encode the images in base64 and save them to a JSON file
     b64_images = images_to_b64_v2(upscaled_images)
     # * Create an image grid
