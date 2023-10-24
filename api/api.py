@@ -179,6 +179,29 @@ async def info():
         "default variable": "Open Route"
     }
 
+app.get("/health", tags=["test"])
+async def health():
+    """Open route for testing the health of the server"""
+
+    return {"Health" : "The server is working correctly"}
+
+@app.get("/test-image", tags=["test"])
+async def return_b64_images():
+    """Open endpoint for testing the return of images in base64 format"""
+
+    # * Load the images to test
+    image_1 = Image.open("./resource/img/Interior Design 1.png")
+    image_2 = Image.open("./resource/img/Interior Design 2.png")
+
+    # * Put the images in a list []
+    images = [image_1, image_2]
+
+     # * Encode the images in base64 and save them to a JSON file
+    b64_images = images_to_b64_v2(images)
+
+    return ImageResponse(images=b64_images)
+
+
 @app.post("/upload-image", tags=["test"])
 async def upload(image_file: UploadFile = File(title="Image file to test uploading"),api_key: APIKey = Security(get_api_key)):
     """A private endpoint to test uploading images."""
