@@ -463,19 +463,21 @@ def img2img_form_upscale(budget : Annotated[str , Form(title="Budget of the re-d
     # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
     input_img = Image.open(BytesIO(input_image_file_object_content))
     # * Resize input image
-    resized_image = resize_below_number(input_img)
+    resized_image = resize_below_number(image=input_img, threshold=128)
     # * Convert the image to mlsd line detector format
     input_image_final = mlsd_detector(resized_image)
     # * Create the images using the given prompt and some other parameters
     images = img2img_model(prompt=prompt, negative_prompt=negative_prompt, image=input_image_final, controlnet_conditioning_scale = 1.0, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
     # * Upscaled all images
-    upscaled_images = [upscale_model(prompt=prompt, image=image) for image in images]
+    upscaled_images = [upscale_model(prompt=prompt, image=image, num_inference_steps=1) for image in images]
     # * Encode the images in base64 and save them to a JSON file
     b64_images = images_to_b64_v2(upscaled_images)
     # * Create an image grid
     grid = image_grid(images)
 
     return ImageResponse(images=b64_images)
+
+# TODO: Try with latent upscaler
 
 @app.post("/inpaint/v1", tags=["inpaint", "old"])
 def inpaint(budget : Annotated[str , Query(title="Budget of the re-design", description="Higher budget tends to produce better re-designs, while lower budget tends to produce worse re-designs")],
