@@ -187,11 +187,11 @@ def load_mlsd_detector(model_id : str):
    
    return MLSDdetector.from_pretrained(model_id, cache_dir = CACHE_DIR_PATH)
 
-def load_upscale_model(upscale_model_path : str):
+def load_upscale_model(upscale_model_id : str):
   """Function for loading the upscaling model based on a path"""
 
   with torch.no_grad():
-    upscale = StableDiffusionUpscalePipeline(upscale_model_path)
+    upscale = StableDiffusionUpscalePipeline.from_pretrained(upscale_model_id)
     upscale.enable_attention_slicing()
     if torch.cuda.is_available():
       upscale.enable_xformers_memory_efficient_attention()
