@@ -41,7 +41,7 @@ from starlette.status import HTTP_413_REQUEST_ENTITY_TOO_LARGE, HTTP_415_UNSUPPO
 from fastapi.security.api_key import APIKey
 from api.auth.auth import get_api_key
 
-from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector, load_upscale_model, zip_images , images_to_bytes, images_to_mime, images_to_mime2, size_upload_files, models, resize_below_number
+from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector, load_upscale_model, zip_images , images_to_bytes, images_to_mime, images_to_mime2, size_upload_files, models, resize_below_number, callback
 
 from api.schemas import Txt2ImgParams, Img2ImgParams, InpaintParams, ImageResponse
 
@@ -160,7 +160,7 @@ negative_prompt = ("blurry, abstract : 1.3, cartoon : 1.3, animated : 1.5, unrea
 @app.get("/", tags=["test"])
 def test_api():
     """Root route request to test API operation"""
-    return {"welcome_message" : "Welcome to my REST API"}
+    return {"Welcome message" : "Welcome to DesAIgner's API"}
 
 
 # * Lockedown Route
@@ -179,7 +179,7 @@ async def info():
         "default variable": "Open Route"
     }
 
-app.get("/health", tags=["test"])
+@app.get("/health", tags=["test"])
 async def health():
     """Open route for testing the health of the server"""
 
@@ -276,7 +276,7 @@ def txt2imgclass(params: Txt2ImgParams, api_key: APIKey = Security(get_api_key))
     # * Create the prompt for creating the image
     prompt = create_prompt(budget=params.budget, style=params.style, environment=params.environment, weather=params.weather, disability=params.disability)
     # * Create the images using the given prompt and some other parameters
-    images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=params.steps, guidance_scale=params.guidance_scale, num_images_per_prompt=params.num_images).images
+    images = txt2img_model(prompt=prompt, negative_prompt=negative_prompt, num_inference_steps=params.steps, guidance_scale=params.guidance_scale, num_images_per_prompt=params.num_images, callback=callback).images
     # * Encode the images in base64 and save them to a JSON file
     b64_images = images_to_b64_v2(images)
     # * Create an image grid
@@ -486,11 +486,16 @@ def img2img_form_upscale(budget : Annotated[str , Form(title="Budget of the re-d
     # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
     input_img = Image.open(BytesIO(input_image_file_object_content))
     # * Resize input image
-    resized_image = resize_below_number(image=input_img, threshold=128)
+    width, height = input_img.size
+    new_width = int((width/4))
+    new_height = int((height/4))
+    resized_image = input_img.resize((new_width, new_height), Image.ANTIALIAS)
+    #resized_image = resize_below_number(image=input_img, threshold=128)
     # * Convert the image to mlsd line detector format
     input_image_final = mlsd_detector(resized_image)
     # * Create the images using the given prompt and some other parameters
-    images = img2img_model(prompt=prompt, negative_prompt=negative_prompt, image=input_image_final, controlnet_conditioning_scale = 1.0, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images).images
+    images = img2img_model(prompt=prompt, negative_prompt=negative_prompt, image=input_image_final, controlnet_conditioning_scale = 1.0, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images, width=width, height=height).images
+    print(images[0].size)
     # * Upscaled all images
     upscaled_images = [upscale_model(prompt=prompt, image=image, num_inference_steps=1) for image in images]
     # * Encode the images in base64 and save them to a JSON file

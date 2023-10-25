@@ -379,3 +379,8 @@ def resize_below_number(image : IMAGE, threshold : int = 512):
   resized_image = image.resize((new_width, new_height), Image.ANTIALIAS)
   
   return resized_image
+
+def callback(step : int, timestep : int, latents: torch.FloatTensor):
+  print("================================")
+  print(f"STEP: {step}")
+  print(f"TIMESTEP: {timestep}")
