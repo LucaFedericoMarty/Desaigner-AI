@@ -4,6 +4,7 @@ StableDiffusionImg2ImgPipeline,
 StableDiffusionInpaintPipeline,
 StableDiffusionImageVariationPipeline,
 StableDiffusionUpscalePipeline,
+StableDiffusionLatentUpscalePipeline,
 EulerAncestralDiscreteScheduler,
 UniPCMultistepScheduler,
 StableDiffusionControlNetPipeline,
@@ -197,6 +198,17 @@ def load_upscale_model(upscale_model_id : str):
       upscale.enable_xformers_memory_efficient_attention()
       upscale.enable_model_cpu_offload()
     return upscale
+  
+def load_latent_upscale_model(latent_upscale_model_id : str):
+  """Function for loading the latent upscaling model based on a path"""
+
+  with torch.no_grad():
+    latent_upscale = StableDiffusionLatentUpscalePipeline.from_pretrained(latent_upscale_model_id)
+    latent_upscale.enable_attention_slicing()
+    if torch.cuda.is_available():
+      latent_upscale.enable_xformers_memory_efficient_attention()
+      latent_upscale.enable_model_cpu_offload()
+    return latent_upscale
 
 def zip_images(file_objects : BytesIO):
   """Zip images given their file objects. It returns a zip folder with the corresponding image file name and its value"""
