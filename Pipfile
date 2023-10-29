@@ -21,7 +21,6 @@ diffusers = {extras = ["torch"], version = "*"}
 compel = "*"
 omegaconf = "*"
 mediapipe = "*"
-starlette-validation-uploadfile = "*"
 fastapi = {extras = ["all"], version = "*"}
 python-jose = {extras = ["cryptography"], version = "*"}
 passlib = {extras = ["bcrypt"], version = "*"}

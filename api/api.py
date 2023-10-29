@@ -126,22 +126,6 @@ app.add_middleware(
     allow_headers=["*"], 
     allow_credentials=True)
 
-# TODO: Check if use this middleware instead of manually creating HTTP Exceptions
-
-"""
-
-app.add_middleware(
-        ValidateUploadFileMiddleware,
-        app_path=[
-            "/img2img",
-            "/inpaint",
-        ],
-        max_size=16777216,
-        file_type=["image/png", "image/jpeg"]
-)
-
-"""
-
 # * Download all the files necessary to excute the API
 snapshot_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", ignore_patterns=["*.gitattriutes", "*.md", "*.ckpt"], allow_patterns=["*.json", "*.txt",  "scheduler/*", "text_encoder/*", "tokenizer/*", "unet/*", "vae/*"], token=HF_TOKEN, cache_dir=CACHE_DIR_PATH)
 inpaint_model_path = hf_hub_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", filename="Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors", cache_dir=CACHE_DIR_PATH)
