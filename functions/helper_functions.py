@@ -392,6 +392,18 @@ def resize_below_number(image : IMAGE, threshold : int = 512):
   
   return resized_image
 
+def resize_to_closest_multiple_of_64(image : IMAGE):
+    """Resizing the image to the closet multiple of 64"""
+
+    # Calculate the new width and height to the closest multiple of 64
+    width, height = image.size
+    new_width = 64 * int(width / 64)
+    new_height = 64 * int(height / 64)
+
+    # Resize the image
+    return image.resize((new_width, new_height))
+
+
 def callback(step : int, timestep : int, latents: torch.FloatTensor):
   print("================================")
   print(f"STEP: {step}")

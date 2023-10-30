@@ -1,10 +1,25 @@
 from fastapi import UploadFile, Query, Security, File, Response
 from fastapi.security.api_key import APIKey
 
+from diffusers import (
+StableDiffusionPipeline,
+StableDiffusionImg2ImgPipeline,
+StableDiffusionInpaintPipeline,
+StableDiffusionLatentUpscalePipeline,
+EulerAncestralDiscreteScheduler,
+UniPCMultistepScheduler,
+StableDiffusionControlNetPipeline,
+ControlNetModel,
+DPMSolverMultistepScheduler)
+
+import torch
+
 from pydantic import BaseModel, Field
 from typing import Annotated, Optional, List, Dict
 
 from PIL import Image
+
+from abc import ABC, abstractmethod
 
 from api.auth.auth import get_api_key
 
@@ -82,3 +97,35 @@ class ImageResponse(BaseModel):
     
     - Images: List of images in base64 format"""
     images: IMAGES_B64 = Field(..., description="List of images in base64 format")
+
+class ImageGenerator(ABC):
+    @abstractmethod
+    def __init__(self, model_id, scheduler) -> None:
+        pass
+    @abstractmethod
+    def generate_image(self):
+        pass
+    def choose_scheduler(self, scheduler):
+        """Choose the scheduler given a name and the pipeline desired to change if compatible"""
+
+        # * If the scheduler is compatible with the given pipeline, change the scheduler pipeline
+        if scheduler in self.model.scheduler.compatibles:
+            self.model.scheduler = scheduler.from_config(self.model.scheduler.config)
+        # * Else, return a message indicating that the scheduler is not compatible with the given pipeline
+        else:
+            f"The scheduler {scheduler} is not compatible with {self.model}"
+
+class TextToImage(ImageGenerator):
+    def __init__(self, model_id, scheduler) -> None:
+        self.model = StableDiffusionPipeline.from_pretrained(
+        model_id,
+        custom_pipeline="lpw_stable_diffusion",
+        torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32),
+        use_safetensors=True,
+        )
+        self.choose_scheduler(scheduler)
+        self.model.enable_vae_slicing()
+        self.model.enable_attention_slicing()
+        if torch.cuda.is_available():
+            self.model.enable_xformers_memory_efficient_attention()
+            self.model.enable_model_cpu_offload()

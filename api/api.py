@@ -35,13 +35,12 @@ from huggingface_hub import hf_hub_download, snapshot_download
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 
-from starlette_validation_uploadfile import ValidateUploadFileMiddleware
 from starlette.status import HTTP_413_REQUEST_ENTITY_TOO_LARGE, HTTP_415_UNSUPPORTED_MEDIA_TYPE
 
 from fastapi.security.api_key import APIKey
 from api.auth.auth import get_api_key
 
-from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector, load_upscale_model, load_latent_upscale_model, zip_images , images_to_bytes, images_to_mime, images_to_mime2, size_upload_files, models, resize_below_number, callback
+from functions.helper_functions import images_to_b64, images_to_b64_v2, weight_keyword, create_prompt, image_grid, choose_scheduler, load_all_pipelines, load_mlsd_detector, load_upscale_model, load_latent_upscale_model, zip_images , images_to_bytes, images_to_mime, images_to_mime2, size_upload_files, models, resize_below_number, resize_to_closest_multiple_of_64, callback
 
 from api.schemas import Txt2ImgParams, Img2ImgParams, InpaintParams, ImageResponse
 
@@ -131,13 +130,13 @@ snapshot_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", ignore_pattern
 inpaint_model_path = hf_hub_download(repo_id="SG161222/Realistic_Vision_V5.1_noVAE", filename="Realistic_Vision_V5.1_fp16-no-ema-inpainting.safetensors", cache_dir=CACHE_DIR_PATH)
 snapshot_download(repo_id="lllyasviel/control_v11p_sd15_mlsd", ignore_patterns=["*.gitattriutes", "*.md", "*.bin", "*.py", "*.png"], allow_patterns=["*.json", "*diffusion_pytorch_model.safetensors"], token=HF_TOKEN, cache_dir=CACHE_DIR_PATH)
 mlsd_detector_path = hf_hub_download(repo_id="lllyasviel/ControlNet", filename="./annotator/ckpts/mlsd_large_512_fp32.pth", cache_dir=CACHE_DIR_PATH)
-snapshot_download(repo_id="stabilityai/stable-diffusion-x4-upscaler", ignore_patterns=["*.gitattriutes", "*.md", "*.ckpt", "x4-upscaler-ema.safetensors"], allow_patterns=["*.json", "*.txt",  "/low_res_scheduler", "scheduler/*", "text_encoder/*", "tokenizer/*", "unet/*", "vae/*"], token=HF_TOKEN, cache_dir=CACHE_DIR_PATH)
+#snapshot_download(repo_id="stabilityai/stable-diffusion-x4-upscaler", ignore_patterns=["*.gitattriutes", "*.md", "*.ckpt", "x4-upscaler-ema.safetensors"], allow_patterns=["*.json", "*.txt",  "/low_res_scheduler", "scheduler/*", "text_encoder/*", "tokenizer/*", "unet/*", "vae/*"], token=HF_TOKEN, cache_dir=CACHE_DIR_PATH)
 snapshot_download(repo_id="stabilityai/sd-x2-latent-upscaler", ignore_patterns=["*.gitattriutes", "*.md", "*.ckpt", "*.png"], allow_patterns=["*.json", "*.txt", "scheduler/*", "text_encoder/*", "tokenizer/*", "unet/*", "vae/*"], token=HF_TOKEN, cache_dir=CACHE_DIR_PATH)
 
 # * Load the models
 txt2img_model, img2img_model, inpaint_model = load_all_pipelines(model_id = "SG161222/Realistic_Vision_V5.1_noVAE", inpaint_model_id = inpaint_model_path, controlnet_model="lllyasviel/control_v11p_sd15_mlsd")
 mlsd_detector =  load_mlsd_detector(model_id="lllyasviel/ControlNet")#revision="fp16", #torch_dtype=torch.float16)
-upscale_model = load_upscale_model(upscale_model_id="stabilityai/stable-diffusion-x4-upscaler")
+#upscale_model = load_upscale_model(upscale_model_id="stabilityai/stable-diffusion-x4-upscaler")
 latent_upscale_model = load_latent_upscale_model(latent_upscale_model_id="stabilityai/sd-x2-latent-upscaler")
 
 # * Create the negative prompt for avoiding certain concepts in the photo
@@ -525,23 +524,20 @@ def img2img_form_latent_upscale(budget : Annotated[str , Form(title="Budget of t
     input_image_file_object_content = input_image.file.read()
     # * Create a BytesIO in-memory buffer of the bytes of the image and use it like a file object in order to create a PIL.Image object
     input_img = Image.open(BytesIO(input_image_file_object_content))
-    # * Resize input image
-    width, height = input_img.size
-    new_width = int((width/2))
-    new_height = int((height/2))
-    resized_image = input_img.resize((new_width, new_height), Image.ANTIALIAS)
-    #resized_image = resize_below_number(image=input_img, threshold=128)
+    # * Resize resized image below 512 in both sides
+    resized_image = resize_below_number(image=input_img, threshold=512)
+    # * Resize resized image to the closet number to a multiple of 64
+    resized_image = resize_to_closest_multiple_of_64(resized_image)
+    # * Get the width and height
+    width, height = resized_image.size
     # * Convert the image to mlsd line detector format
     input_image_final = mlsd_detector(resized_image)
     # * Create the images using the given prompt and some other parameters
     images = img2img_model(prompt=prompt, negative_prompt=negative_prompt, image=input_image_final, controlnet_conditioning_scale = 1.0, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images, width=width, height=height, output_type="latent").images
-    print(images[0].size)
     # * Upscaled all images
-    upscaled_images = [latent_upscale_model(prompt=prompt, image=image, num_inference_steps=2, guidance_scale=0) for image in images]
+    upscaled_images = latent_upscale_model(prompt=prompt, image=images, num_inference_steps=20, guidance_scale=0).images
     # * Encode the images in base64 and save them to a JSON file
     b64_images = images_to_b64_v2(upscaled_images)
-    # * Create an image grid
-    grid = image_grid(images)
 
     return ImageResponse(images=b64_images)
 
