@@ -117,15 +117,19 @@ class ImageGenerator(ABC):
 
 class TextToImage(ImageGenerator):
     def __init__(self, model_id, scheduler) -> None:
-        self.model = StableDiffusionPipeline.from_pretrained(
-        model_id,
-        custom_pipeline="lpw_stable_diffusion",
-        torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32),
-        use_safetensors=True,
-        )
-        self.choose_scheduler(scheduler)
-        self.model.enable_vae_slicing()
-        self.model.enable_attention_slicing()
-        if torch.cuda.is_available():
-            self.model.enable_xformers_memory_efficient_attention()
-            self.model.enable_model_cpu_offload()
+        with torch.no_grad():
+            self.model = StableDiffusionPipeline.from_pretrained(
+            model_id,
+            custom_pipeline="lpw_stable_diffusion",
+            torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32),
+            use_safetensors=True,
+            )
+            self.choose_scheduler(scheduler)
+            self.model.enable_vae_slicing()
+            self.model.enable_attention_slicing()
+            if torch.cuda.is_available():
+                self.model.enable_xformers_memory_efficient_attention()
+                self.model.enable_model_cpu_offload()
+
+    def generate_image(self):
+        return super().generate_image()
