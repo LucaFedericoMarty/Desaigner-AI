@@ -23,6 +23,8 @@ from abc import ABC, abstractmethod
 
 from api.auth.auth import get_api_key
 
+from functions.helper_functions import create_prompt, callback
+
 IMAGES_B64 = List[str]
 
 IMAGE = Image.Image
@@ -99,12 +101,55 @@ class ImageResponse(BaseModel):
     images: IMAGES_B64 = Field(..., description="List of images in base64 format")
 
 class ImageGenerator(ABC):
+    # * Class variable negative prompt for avoiding certain concepts in the photo
+    negative_prompt = ("blurry, abstract : 1.3, cartoon : 1.3, animated : 1.5, unrealistic : 1.6, watermark, signature, two faces, duplicate, copy, multi, two, disfigured, kitsch, ugly, oversaturated, contrast, grain, low resolution, deformed, blurred, bad anatomy, disfigured, badly drawn face, mutation, mutated, extra limb, ugly, bad holding object, badly drawn arms, missing limb, blurred, floating limbs, detached limbs, deformed arms, blurred, out of focus, long neck, long body, ugly, disgusting, badly drawn, childish, disfigured,old ugly, tile, badly drawn arms, badly drawn legs, badly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, blurred, bad anatomy, blurred, watermark, grainy, signature, clipped, draftbird view, bad proportion, cropped image, overexposed, underexposed, (image on TV : 1.5), (TV turned on : 1.4)")
+
     @abstractmethod
     def __init__(self, model_id, scheduler) -> None:
         pass
     @abstractmethod
     def generate_image(self):
         pass
+
+    def create_prompt(budget : str, style : str , environment : str, weather : str, disability : str or None) -> str:
+        """Creat an adequate prompt with each keyword weighted"""
+
+        def lowercase_first_letter(word : str) -> str:
+            """Lowercase the first letter of a word"""
+            
+            return word[0].lower() + word[1:]
+    
+        def weight_keyword(keyword : str, weight : float) -> str:
+            """Weight each keyword by the given weight"""
+
+            # * Weight the keyword by the given weight in a string format
+            return (f'({keyword} : {weight})')
+
+        if disability:
+            disability = lowercase_first_letter(disability)
+
+        # * Create all the keywords or key phrases to weight
+        budget += " budget"
+        budget_w = weight_keyword(budget, 0.7)
+        environment_w = weight_keyword(environment, 1.2)
+        style += " style"
+        style_w = weight_keyword(style, 1.7)
+        weather += " weather"
+        weather_w = weight_keyword(weather, 0.4)
+        disability_new = f'adapted and usable for {disability}'
+        disability_w = weight_keyword(disability_new, 0.5)
+
+        # * Create the prompt with additional details to improve its performance
+        normal_prompt = f"RAW photo, masterpiece, interior design, {environment_w}, {style_w}, {weather_w}, {budget_w}, ultra realistic render, 3D art, daylight, hyperrealistic, photorealistic, ultradetailed, 8k, soft lighting, high quality, film grain, Fujifilm XT3"
+        disability_prompt = f"RAW photo, masterpiece, interior design, {environment_w}, {style_w}, {weather_w}, {budget_w}, {disability_w}, ultra realistic render, 3D art, daylight, hyperrealistic, photorealistic, ultradetailed, 8k, soft lighting, high quality, film grain, Fujifilm XT3"
+
+        if not disability:
+            prompt = normal_prompt
+        else:
+            prompt = disability_prompt
+
+        return prompt
+    
     def choose_scheduler(self, scheduler):
         """Choose the scheduler given a name and the pipeline desired to change if compatible"""
 
@@ -124,12 +169,40 @@ class TextToImage(ImageGenerator):
             torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32),
             use_safetensors=True,
             )
-            self.choose_scheduler(scheduler)
+            self.choose_scheduler(scheduler=scheduler)
             self.model.enable_vae_slicing()
             self.model.enable_attention_slicing()
             if torch.cuda.is_available():
                 self.model.enable_xformers_memory_efficient_attention()
                 self.model.enable_model_cpu_offload()
 
-    def generate_image(self):
-        return super().generate_image()
+    def generate_image(self, params : Txt2ImgParams):
+        # * Create the prompt for creating the image
+        prompt = super().create_prompt(budget=params.budget, style=params.style, environment=params.environment, weather=params.weather, disability=params.disability)
+        # * Create the images using the given prompt and some other parameters
+        images = self.model(prompt=prompt, negative_prompt=super().negative_prompt, num_inference_steps=params.steps, guidance_scale=params.guidance_scale, num_images_per_prompt=params.num_images, callback=callback).images
+
+        return images
+    
+class ImageToImage(ImageGenerator):
+    def __init__(self, model_id, scheduler) -> None:
+        with torch.no_grad():
+            self.model = StableDiffusionControlNetPipeline.from_pretrained(
+            model_id,
+            torch_dtype=(torch.float16 if torch.cuda.is_available() else torch.float32),
+            use_safetensors=True,
+            controlnet=controlnet)
+            self.model.choose_scheduler(scheduler=scheduler)
+            self.model.enable_vae_slicing()
+            self.model.enable_attention_slicing()
+            if torch.cuda.is_available():
+                self.model.enable_xformers_memory_efficient_attention()
+                self.model.enable_model_cpu_offload()
+
+    def generate_image(self, budget : str, style : str, environment : str, weather : str, disability : str, steps : int, guidance_scale : float, num_images : int):
+        # * Create the prompt for creating the image
+        prompt = super().create_prompt(budget=budget, style=style, environment=environment, weather=weather, disability=disability)
+        # * Create the images using the given prompt and some other parameters
+        images = self.model(prompt=prompt, negative_prompt=super().negative_prompt, num_inference_steps=steps, guidance_scale=guidance_scale, num_images_per_prompt=num_images, callback=callback).images
+
+        return images
